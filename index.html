@@ -33,8 +33,8 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-50);color:
 .mlbl{font-size:11px;color:var(--gray-400);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
 .mval{font-size:22px;font-weight:500}
 .msub{font-size:11px;color:var(--gray-400);margin-top:3px}
-.card{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px}
-.card-hdr{padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:visible;margin-bottom:16px}
+.card-hdr{padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
 .card-title{font-size:11px;font-weight:500;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.05em}
 .tbl{width:100%;border-collapse:collapse}
 .tbl th{font-size:11px;color:var(--gray-400);font-weight:500;text-align:left;padding:8px 12px;border-bottom:0.5px solid var(--border);white-space:nowrap;background:var(--gray-50);text-transform:uppercase;letter-spacing:0.03em}
@@ -264,6 +264,13 @@ textarea.ni{resize:vertical;line-height:1.5}
 
 <!-- COST -->
 <div id="panel-cost" class="panel">
+  <div style="background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="font-size:12px;font-weight:500;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap">Formula</div>
+    <select class="ni" id="cost-formula-sel" style="flex:1;min-width:180px" onchange="loadFormulaForCost(this.value)">
+      <option value="">— use current formula builder —</option>
+    </select>
+    <div style="font-size:12px;color:var(--gray-400)" id="cost-formula-meta"></div>
+  </div>
   <div class="slbl">Batch scaling</div>
   <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
     <div style="display:flex;align-items:center;gap:10px"><label style="font-size:13px;color:var(--gray-400);min-width:170px">Batch size</label><input type="text" inputmode="decimal" id="bsz" value="500" class="ni" style="width:80px" oninput="rcc()"><span style="font-size:13px;color:var(--gray-400)">ml</span></div>
@@ -480,7 +487,7 @@ async function dbDelete(table,filters=[]){
   if(!r.ok)throw new Error(await r.text());
 }
 
-let sups=[],ings=[],frows=[],vers=[],selMult=4,manPr=false,isort={col:'name',dir:1};
+let sups=[],ings=[],frows=[],vers=[],selMult=4,manPr=false,isort={col:'name',dir:1},costFrowsOverride=null;
 
 const fmtRp=n=>'Rp '+Math.round(n).toLocaleString('id-ID');
 const fmtN=n=>Math.round(n).toLocaleString('id-ID');
@@ -818,7 +825,7 @@ function renderFRows(){
 
     const gCell=fMode==='g'
       ?`<input class="ni" type="text" inputmode="decimal" id="g-${idx}" value="${row.amount??''}" placeholder="0.000" style="width:72px;font-weight:500"
-          oninput="frows[${idx}].amount=this.value;updFMetOnly()"
+          oninput="frows[${idx}].amount=this.value;updFMetOnly();updGRowBar(${idx})"
           onblur="frows[${idx}].amount=this.value;softRecalc()">`
       :`<span style="font-size:13px;color:var(--gray-400)">${gVal.toFixed(4).replace(/(\.\d*[1-9])0+$/,'$1').replace(/\.0+$/,'')}g</span>`;
 
@@ -848,6 +855,18 @@ function renderFRows(){
 
 function softRecalc(){
   updFMet();updFAlerts();rcc();updInv();updPctStatus();
+}
+
+function updGRowBar(idx){
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  let totalG=0;
+  frows.forEach(r=>totalG+=parseFloat(r.amount)||0);
+  const g=parseFloat(frows[idx]?.amount)||0;
+  const pct=totalG>0?(g/totalG*100):0;
+  const bar=document.getElementById(`pb-${idx}`);
+  const lbl=document.getElementById(`pblbl-${idx}`);
+  if(bar)bar.style.width=Math.min(pct,100)+'%';
+  if(lbl)lbl.textContent=pct.toFixed(2)+'%';
 }
 
 function hAC(idx,val){
@@ -942,11 +961,18 @@ function addFRow(){
 function remFRow(idx){frows.splice(idx,1);renderFRows();}
 
 function getBCogs(){
-  const{cost}=getFTotals();
-  const bv=parseFloat(document.getElementById('bvol').value)||100,bs=parseFloat(document.getElementById('bsz').value)||500;
-  const bc=parseFloat(document.getElementById('bcost').value)||0,fv=parseFloat(document.getElementById('fvol').value)||50;
-  const sf=bs/bv,units=Math.floor(bs/fv),cpu=units>0?(cost*sf/units+bc):0;
-  return{cpu,units,bfc:cost*sf,bc};
+  const activeRows=costFrowsOverride?costFrowsOverride.rows:frows;
+  const activeVol=costFrowsOverride?costFrowsOverride.vol:(parseFloat(document.getElementById('bvol').value)||100);
+  let cost=0;
+  activeRows.forEach(r=>{
+    const gVal=fMode==='pct'?((parseFloat(r.pct)||0)*activeVol/100):parseFloat(r.amount)||0;
+    cost+=gVal*(parseFloat(r.costPerG)||0);
+  });
+  const bs=parseFloat(document.getElementById('bsz').value)||500;
+  const bc=parseFloat(document.getElementById('bcost').value)||0;
+  const fv=parseFloat(document.getElementById('fvol').value)||50;
+  const sf=bs/activeVol,units=Math.floor(bs/fv),cpu=units>0?(cost*sf/units+bc):0;
+  return{cpu,units,bfc:cost*sf,bc,formulaName:costFrowsOverride?costFrowsOverride.name:(document.getElementById('fname')?.value||'')};
 }
 function rcc(){
   const{cpu,units,bfc,bc}=getBCogs();
@@ -1020,7 +1046,8 @@ function updInv(){
   document.getElementById('pig').textContent=document.getElementById('ig').value;
   document.getElementById('pcn').textContent=document.getElementById('cn').value||'—';
   document.getElementById('pcd').textContent=document.getElementById('cd').value||'';
-  const pf=document.getElementById('ip');if(pf)pf.value=fn+' (50ml)';
+  const formulaName=costFrowsOverride?costFrowsOverride.name:(document.getElementById('fname')?.value||'');
+  const pf=document.getElementById('ip');if(pf&&!manPr)pf.value=formulaName+' (50ml)';
   document.getElementById('pft').innerHTML=bldFtr();
   if(!manPr){const{cpu}=getBCogs();const pif=document.getElementById('ipr');if(pif)pif.value=Math.round(cpu*selMult);}
   updIT();
@@ -1113,7 +1140,51 @@ function switchTab(id){
   const ids=['suppliers','inventory','formula','cost','invoice','versions'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ids[i]===id));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+id));
-  if(id==='cost')rcc();if(id==='invoice')updInv();if(id==='versions')renderVers();
+  if(id==='cost'){populateCostFormulaSelector();rcc();}
+  if(id==='invoice')updInv();
+  if(id==='versions')renderVers();
+}
+
+function populateCostFormulaSelector(){
+  const sel=document.getElementById('cost-formula-sel');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— use current formula builder —</option>';
+  const seen=new Set();
+  vers.forEach(v=>{
+    if(!seen.has(v.formula_id)){
+      seen.add(v.formula_id);
+      const opt=document.createElement('option');
+      opt.value=v.formula_id;
+      opt.textContent=v.formulas.name;
+      sel.appendChild(opt);
+    }
+  });
+  if(cur)sel.value=cur;
+}
+
+let costFrowsOverride=null;
+
+function loadFormulaForCost(formulaId){
+  const meta=document.getElementById('cost-formula-meta');
+  if(!formulaId){
+    costFrowsOverride=null;
+    if(meta)meta.textContent='Using formula builder';
+    rcc();updInv();return;
+  }
+  const latest=vers.find(v=>v.formula_id===formulaId);
+  if(!latest){if(meta)meta.textContent='No saved versions found';return;}
+  if(meta)meta.textContent=`Latest: v${latest.version_number} · ${latest.formula_rows.length} ingredients · ${new Date(latest.saved_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}`;
+  const vol=latest.formulas.base_volume_ml||100;
+  costFrowsOverride={
+    rows:(latest.formula_rows||[]).map(r=>({name:r.ingredient_name,amount:r.amount_g,pct:vol>0?(r.amount_g/vol*100):0,costPerG:r.cost_per_g_snapshot})),
+    name:latest.formulas.name,
+    vol
+  };
+  rcc();
+  const pf=document.getElementById('ip');
+  if(pf)pf.value=latest.formulas.name+' (50ml)';
+  updIT();
 }
 
 init();
