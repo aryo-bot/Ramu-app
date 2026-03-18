@@ -63,9 +63,9 @@ textarea.ni{resize:vertical;line-height:1.5}
 .alert.show{display:block}
 .a-warn{background:#FAEEDA;border:0.5px solid var(--amber);color:#854F0B}
 .ac-wrap{position:relative}
-.ac-drop{position:absolute;top:100%;left:0;right:0;background:white;border:0.5px solid var(--border);border-radius:var(--radius);z-index:200;max-height:160px;overflow-y:auto;margin-top:2px;display:none;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.ac-drop{position:absolute;top:100%;left:0;right:0;background:white;border:0.5px solid var(--border);border-radius:var(--radius);z-index:9000;max-height:200px;overflow-y:auto;margin-top:2px;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.14)}
 .ac-item{padding:7px 10px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
-.ac-item:hover{background:var(--gray-50)}
+.ac-item:hover,.ac-item.ac-active{background:var(--blue-light)}
 .ac-meta{font-size:11px;color:var(--gray-400)}
 .pg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1rem}
 .pc{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;cursor:pointer;transition:border-color 0.15s}
@@ -218,22 +218,37 @@ textarea.ni{resize:vertical;line-height:1.5}
 
 <!-- FORMULA -->
 <div id="panel-formula" class="panel">
-  <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:20px">
-    <div style="flex:1">
+  <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap">
+    <div style="flex:1;min-width:180px">
       <div class="fld" style="margin-bottom:0"><label>Formula name</label>
       <input id="fname" value="Akar v4" class="ni" style="width:100%;font-size:16px;font-weight:500" oninput="updInv()"></div>
     </div>
     <div><div class="fld" style="margin-bottom:0"><label>Base volume (ml)</label>
     <input id="bvol" type="text" inputmode="decimal" value="100" class="ni" style="width:80px" oninput="recalc()"></div></div>
+    <div>
+      <div class="fld" style="margin-bottom:0"><label>Entry mode</label>
+      <div style="display:flex;border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;background:white">
+        <button id="mode-pct" onclick="setFMode('pct')" style="padding:6px 14px;font-size:13px;border:none;cursor:pointer;background:var(--blue);color:white;font-family:inherit;transition:all 0.15s">% first</button>
+        <button id="mode-g" onclick="setFMode('g')" style="padding:6px 14px;font-size:13px;border:none;cursor:pointer;background:white;color:var(--gray-400);font-family:inherit;transition:all 0.15s">g first</button>
+      </div></div>
+    </div>
     <button class="btn btn-primary" onclick="saveVer()">+ Save version</button>
+  </div>
+  <div id="pct-status" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;color:var(--gray-400)">
+    <span>Total: <strong id="pct-total" style="color:var(--gray-900)">0%</strong></span>
+    <span id="pct-hint" style="font-size:12px"></span>
   </div>
   <div id="falerts" style="margin-bottom:12px"></div>
   <div class="card">
     <table class="tbl">
-      <thead><tr>
-        <th style="width:32%">Ingredient</th><th style="width:13%">Amount (g)</th>
-        <th style="width:14%">Cost/g (Rp)</th><th style="width:22%">% of formula</th>
-        <th style="width:13%;text-align:right">Line cost</th><th style="width:6%"></th>
+      <thead><tr id="fhead">
+        <th style="width:30%">Ingredient</th>
+        <th style="width:12%" id="fh-pct">% of formula</th>
+        <th style="width:12%" id="fh-g">Amount (g)</th>
+        <th style="width:13%">Cost/g (Rp)</th>
+        <th style="width:18%">Visual %</th>
+        <th style="width:11%;text-align:right">Line cost</th>
+        <th style="width:4%"></th>
       </tr></thead>
       <tbody id="fbody"></tbody>
     </table>
@@ -731,49 +746,199 @@ async function delIng(id){
 
 function syncFCosts(){frows.forEach(r=>{const m=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());if(m)r.costPerG=m.cost_per_g;});renderFRows();}
 
-function getFTotals(){let g=0,cost=0;frows.forEach(r=>{const a=parseFloat(r.amount)||0,c=parseFloat(r.costPerG)||0;g+=a;cost+=a*c;});return{g,cost};}
+let fMode='pct';
+let acActiveIdx={};
+
+function setFMode(mode){
+  fMode=mode;
+  document.getElementById('mode-pct').style.background=mode==='pct'?'var(--blue)':'white';
+  document.getElementById('mode-pct').style.color=mode==='pct'?'white':'var(--gray-400)';
+  document.getElementById('mode-g').style.background=mode==='g'?'var(--blue)':'white';
+  document.getElementById('mode-g').style.color=mode==='g'?'white':'var(--gray-400)';
+  renderFRows();
+}
+
+function getFTotals(){
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  let g=0,cost=0;
+  frows.forEach(r=>{
+    const gVal=fMode==='pct'?((parseFloat(r.pct)||0)*vol/100):parseFloat(r.amount)||0;
+    g+=gVal;cost+=gVal*(parseFloat(r.costPerG)||0);
+  });
+  return{g,cost};
+}
+
+function pctToG(pct){
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  return(parseFloat(pct)||0)*vol/100;
+}
+function gToPct(g,tg){return tg>0?((parseFloat(g)||0)/tg*100):0;}
+
+function updPctStatus(){
+  const totalPct=frows.reduce((s,r)=>s+(parseFloat(r.pct)||0),0);
+  const ptEl=document.getElementById('pct-total');
+  const phEl=document.getElementById('pct-hint');
+  if(ptEl){
+    ptEl.textContent=totalPct.toFixed(2)+'%';
+    ptEl.style.color=Math.abs(totalPct-100)<0.01?'var(--green)':totalPct>100?'var(--red)':'var(--gray-900)';
+  }
+  if(phEl){
+    if(Math.abs(totalPct-100)<0.01)phEl.textContent='Perfect — formula adds up to 100%';
+    else if(totalPct>100)phEl.textContent='Over 100% — reduce some values';
+    else if(totalPct>0)phEl.textContent=(100-totalPct).toFixed(2)+'% remaining';
+    else phEl.textContent='Enter % per ingredient — grams calculate from base volume';
+  }
+}
+
 function renderFRows(){
-  const body=document.getElementById('fbody');const{g:tg}=getFTotals();
-  if(!frows.length){body.innerHTML=`<tr><td colspan="6"><div class="emp">Add ingredients to build your formula.</div></td></tr>`;updFMet();return;}
+  const body=document.getElementById('fbody');
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  const{g:tg}=getFTotals();
+  const psEl=document.getElementById('pct-status');
+  if(psEl)psEl.style.display=fMode==='pct'?'flex':'none';
+  updPctStatus();
+  if(!frows.length){
+    body.innerHTML=`<tr><td colspan="7"><div class="emp">Add ingredients to build your formula.</div></td></tr>`;
+    updFMet();return;
+  }
   body.innerHTML='';
   frows.forEach((row,idx)=>{
-    const a=parseFloat(row.amount)||0,c=parseFloat(row.costPerG)||0,pct=tg>0?(a/tg*100):0;
+    const gVal=fMode==='pct'?pctToG(row.pct):parseFloat(row.amount)||0;
+    const c=parseFloat(row.costPerG)||0;
+    const pct=fMode==='pct'?(parseFloat(row.pct)||0):gToPct(gVal,tg);
     const m=ings.find(i=>i.name.toLowerCase()===row.name.toLowerCase());
     const cbg=m?'style="background:#EAF3DE"':'';
-    const sw=m&&(m.stock_g||0)<a?`<div style="font-size:11px;color:var(--amber);margin-top:2px">Only ${m.stock_g}g in stock</div>`:'';
+    const sw=m&&(m.stock_g||0)<gVal?`<div style="font-size:11px;color:var(--amber);margin-top:2px">Only ${m.stock_g}g in stock</div>`:'';
+
+    const pctCell=fMode==='pct'
+      ?`<input class="ni" type="text" inputmode="decimal" id="pct-${idx}" value="${row.pct??''}" placeholder="0.00" style="width:72px;font-weight:500"
+          oninput="frows[${idx}].pct=this.value;updPctStatus();updFMetOnly()"
+          onblur="frows[${idx}].pct=this.value;softRecalc()">`
+      :`<span style="font-size:13px;color:var(--gray-400)">${pct.toFixed(2)}%</span>`;
+
+    const gCell=fMode==='g'
+      ?`<input class="ni" type="text" inputmode="decimal" id="g-${idx}" value="${row.amount??''}" placeholder="0.000" style="width:72px;font-weight:500"
+          oninput="frows[${idx}].amount=this.value;updFMetOnly()"
+          onblur="frows[${idx}].amount=this.value;softRecalc()">`
+      :`<span style="font-size:13px;color:var(--gray-400)">${gVal.toFixed(4).replace(/(\.\d*[1-9])0+$/,'$1').replace(/\.0+$/,'')}g</span>`;
+
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><div class="ac-wrap"><input class="ni" value="${esc(row.name)}" style="width:100%" id="ac-${idx}" oninput="frows[${idx}].name=this.value;hAC(${idx},this.value)" onblur="setTimeout(()=>cAC(${idx}),160)" onfocus="hAC(${idx},this.value)"><div class="ac-drop" id="drop-${idx}"></div></div>${sw}</td>
-      <td><input class="ni" type="text" inputmode="decimal" value="${row.amount}" style="width:72px" oninput="frows[${idx}].amount=this.value;recalc()"></td>
-      <td><input class="ni" type="text" inputmode="decimal" value="${row.costPerG}" style="width:80px" ${cbg} oninput="frows[${idx}].costPerG=this.value;recalc()"></td>
-      <td><div style="font-size:12px;color:var(--gray-400)">${pct.toFixed(1)}%</div><div class="pbw" style="width:88%"><div class="pb" style="width:${Math.min(pct,100)}%"></div></div></td>
-      <td style="font-size:13px;color:var(--gray-400);text-align:right;white-space:nowrap">${fmtRp(a*c)}</td>
+    tr.innerHTML=`
+      <td><div class="ac-wrap">
+        <input class="ni" value="${esc(row.name)}" style="width:100%" id="ac-${idx}"
+          oninput="frows[${idx}].name=this.value;hAC(${idx},this.value)"
+          onkeydown="acKey(event,${idx})"
+          onblur="setTimeout(()=>cAC(${idx}),180)"
+          onfocus="hAC(${idx},this.value)">
+        <div class="ac-drop" id="drop-${idx}"></div>
+      </div>${sw}</td>
+      <td>${pctCell}</td>
+      <td>${gCell}</td>
+      <td><input class="ni" type="text" inputmode="decimal" id="cpg-${idx}" value="${row.costPerG??''}" placeholder="0" style="width:80px" ${cbg}
+        oninput="frows[${idx}].costPerG=this.value;updFMetOnly()"
+        onblur="frows[${idx}].costPerG=this.value;softRecalc()"></td>
+      <td><div class="pbw" style="width:92%"><div class="pb" style="width:${Math.min(pct,100)}%"></div></div>
+        <div style="font-size:11px;color:var(--gray-400);margin-top:2px">${pct.toFixed(2)}%</div></td>
+      <td style="font-size:13px;color:var(--gray-400);text-align:right;white-space:nowrap">${fmtRp(gVal*c)}</td>
       <td><button class="btn-del" onclick="remFRow(${idx})">×</button></td>`;
     body.appendChild(tr);
   });
   updFMet();updFAlerts();rcc();updInv();
 }
+
+function softRecalc(){
+  updFMet();updFAlerts();rcc();updInv();updPctStatus();
+}
+
 function hAC(idx,val){
-  const drop=document.getElementById(`drop-${idx}`);const q=val.toLowerCase();
+  acActiveIdx[idx]=-1;
+  const drop=document.getElementById(`drop-${idx}`);
+  const q=(val||'').toLowerCase();
   const ms=q.length<1?ings:ings.filter(i=>i.name.toLowerCase().includes(q));
   if(!ms.length){drop.style.display='none';return;}
   drop.style.display='block';drop.innerHTML='';
-  ms.slice(0,7).forEach(m=>{const st=stSt(m);const div=document.createElement('div');div.className='ac-item';div.innerHTML=`<span>${esc(m.name)}</span><span class="ac-meta">${st.c==='b-ok'?'Rp '+fmtN(m.cost_per_g)+'/g':st.l}</span>`;div.onmousedown=()=>{frows[idx].name=m.name;frows[idx].costPerG=m.cost_per_g;cAC(idx);renderFRows();};drop.appendChild(div);});
+  drop._matches=ms.slice(0,8);
+  drop._matches.forEach((m,i)=>{
+    const st=stSt(m);
+    const div=document.createElement('div');div.className='ac-item';div.dataset.i=i;
+    div.innerHTML=`<span>${esc(m.name)}</span><span class="ac-meta">${st.c==='b-ok'?'Rp '+fmtN(m.cost_per_g)+'/g':st.l}</span>`;
+    div.onmousedown=(e)=>{e.preventDefault();selAC(idx,m);};
+    drop.appendChild(div);
+  });
 }
-function cAC(idx){const d=document.getElementById(`drop-${idx}`);if(d)d.style.display='none';}
+
+function acKey(e,idx){
+  const drop=document.getElementById(`drop-${idx}`);
+  if(!drop||drop.style.display==='none'){
+    if(e.key==='ArrowDown'){e.preventDefault();hAC(idx,document.getElementById(`ac-${idx}`)?.value||'');}
+    return;
+  }
+  const items=[...drop.querySelectorAll('.ac-item')];
+  let cur=acActiveIdx[idx]??-1;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();cur=Math.min(cur+1,items.length-1);
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();cur=Math.max(cur-1,0);
+  } else if(e.key==='Enter'){
+    e.preventDefault();
+    if(cur>=0&&drop._matches[cur])selAC(idx,drop._matches[cur]);
+    return;
+  } else if(e.key==='Escape'){
+    cAC(idx);return;
+  } else return;
+  acActiveIdx[idx]=cur;
+  items.forEach((el,i)=>el.classList.toggle('ac-active',i===cur));
+  items[cur]?.scrollIntoView({block:'nearest'});
+}
+
+function selAC(idx,m){
+  frows[idx].name=m.name;frows[idx].costPerG=m.cost_per_g;
+  cAC(idx);renderFRows();
+  setTimeout(()=>{
+    const next=fMode==='pct'?document.getElementById(`pct-${idx}`):document.getElementById(`g-${idx}`);
+    if(next){next.focus();next.select();}
+  },60);
+}
+
+function cAC(idx){
+  const d=document.getElementById(`drop-${idx}`);if(d)d.style.display='none';
+  acActiveIdx[idx]=-1;
+}
+
+function updFMetOnly(){updFMet();updFAlerts();}
+
 function updFAlerts(){
   const box=document.getElementById('falerts');
-  const issues=frows.filter(r=>{const m=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());return m&&(m.stock_g||0)<(parseFloat(r.amount)||0);});
-  box.innerHTML=issues.length?`<div class="alert a-warn show">Stock insufficient: ${issues.map(r=>{const m=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());return`${r.name} (need ${r.amount}g, have ${m.stock_g}g)`;}).join(' · ')}</div>`:'';
+  const issues=frows.filter(r=>{
+    const gVal=fMode==='pct'?pctToG(r.pct):parseFloat(r.amount)||0;
+    const m=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());
+    return m&&(m.stock_g||0)<gVal&&gVal>0;
+  });
+  box.innerHTML=issues.length?`<div class="alert a-warn show">Stock insufficient: ${issues.map(r=>{
+    const m=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());
+    const gVal=fMode==='pct'?pctToG(r.pct):parseFloat(r.amount)||0;
+    return`${r.name} (need ${gVal.toFixed(3)}g, have ${m.stock_g}g)`;
+  }).join(' · ')}</div>`:'';
 }
+
 function updFMet(){
-  const{g,cost}=getFTotals();const vol=parseFloat(document.getElementById('bvol').value)||100;
-  document.getElementById('mw').textContent=g.toFixed(1);
+  const{g,cost}=getFTotals();
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  document.getElementById('mw').textContent=g.toFixed(4).replace(/(\.\d*[1-9])0+$/,'$1').replace(/\.0+$/,'')||'0';
   document.getElementById('mc').textContent=fmtRp(cost);
   document.getElementById('mp').textContent=vol>0?fmtN(cost/vol):'—';
   document.getElementById('mn').textContent=frows.length;
 }
+
 function recalc(){renderFRows();}
-function addFRow(){frows.push({name:'',amount:0,costPerG:0});renderFRows();setTimeout(()=>{const rows=document.querySelectorAll('#fbody tr');if(rows.length)rows[rows.length-1].querySelector('input').focus();},50);}
+function addFRow(){
+  frows.push({name:'',amount:0,pct:0,costPerG:0});
+  renderFRows();
+  setTimeout(()=>{
+    const lastAc=document.getElementById(`ac-${frows.length-1}`);
+    if(lastAc)lastAc.focus();
+  },50);
+}
 function remFRow(idx){frows.splice(idx,1);renderFRows();}
 
 function getBCogs(){
@@ -905,7 +1070,11 @@ async function saveVer(){
     const nv=vdArr&&vdArr.length?vdArr[0].version_number+1:1;
     const nverArr=await dbInsert('formula_versions',{formula_id:fid,version_number:nv});
     const nvid=nverArr[0].id;
-    const rows=frows.map(r=>{const ing=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());return{version_id:nvid,ingredient_id:ing?.id||null,ingredient_name:r.name,amount_g:parseFloat(r.amount)||0,cost_per_g_snapshot:parseFloat(r.costPerG)||0};});
+    const rows=frows.map(r=>{
+      const ing=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());
+      const gVal=fMode==='pct'?pctToG(r.pct):parseFloat(r.amount)||0;
+      return{version_id:nvid,ingredient_id:ing?.id||null,ingredient_name:r.name,amount_g:gVal,cost_per_g_snapshot:parseFloat(r.costPerG)||0};
+    });
     await dbInsert('formula_rows',rows);
     await loadVers();renderVers();switchTab('versions');toast(`${name} v${nv} saved`,'success');
   }catch(e){toast('Error: '+e.message,'error');}
@@ -927,8 +1096,16 @@ function renderVers(){
   }).join('');
 }
 function restVer(ri){
-  const v=vers[ri];frows=(v.formula_rows||[]).map(r=>({name:r.ingredient_name,amount:r.amount_g,costPerG:r.cost_per_g_snapshot}));
-  document.getElementById('fname').value=v.formulas.name;document.getElementById('bvol').value=v.formulas.base_volume_ml;
+  const v=vers[ri];
+  const vol=v.formulas.base_volume_ml||100;
+  frows=(v.formula_rows||[]).map(r=>({
+    name:r.ingredient_name,
+    amount:r.amount_g,
+    pct:vol>0?(r.amount_g/vol*100):0,
+    costPerG:r.cost_per_g_snapshot
+  }));
+  document.getElementById('fname').value=v.formulas.name;
+  document.getElementById('bvol').value=vol;
   switchTab('formula');renderFRows();toast(`Restored ${v.formulas.name} v${v.version_number}`,'success');
 }
 
