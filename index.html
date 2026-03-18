@@ -455,13 +455,13 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const WID='a1b2c3d4-0000-0000-0000-000000000002';
 const CATS=['Essential oil','Fragrance oil','Aroma chemical','Top note','Heart note','Base note','Synthetic','Diluent','Solvent','Fixative','Other'];
 
-const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Accept':'application/json','Prefer':'return=representation'};
 
 async function dbGet(table,select,filters=[]){
   let url=SB_URL+'/rest/v1/'+table+'?select='+encodeURIComponent(select);
   filters.forEach(f=>url+='&'+f);
-  const r=await fetch(url,{headers:H});
-  if(!r.ok)throw new Error(await r.text());
+  const r=await fetch(url,{method:'GET',mode:'cors',headers:H});
+  if(!r.ok){const t=await r.text();throw new Error(`${table} GET ${r.status}: ${t}`);}
   return r.json();
 }
 async function dbGetOne(table,select,filters=[]){
@@ -469,22 +469,22 @@ async function dbGetOne(table,select,filters=[]){
   return arr&&arr.length?arr[0]:null;
 }
 async function dbInsert(table,body){
-  const r=await fetch(SB_URL+'/rest/v1/'+table,{method:'POST',headers:H,body:JSON.stringify(body)});
-  if(!r.ok)throw new Error(await r.text());
+  const r=await fetch(SB_URL+'/rest/v1/'+table,{method:'POST',mode:'cors',headers:H,body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error(`${table} INSERT ${r.status}: ${t}`);}
   const txt=await r.text();
   return txt?JSON.parse(txt):[];
 }
 async function dbUpdate(table,body,filters=[]){
   let url=SB_URL+'/rest/v1/'+table+'?';
   filters.forEach((f,i)=>url+=(i?'&':'')+f);
-  const r=await fetch(url,{method:'PATCH',headers:H,body:JSON.stringify(body)});
-  if(!r.ok)throw new Error(await r.text());
+  const r=await fetch(url,{method:'PATCH',mode:'cors',headers:H,body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error(`${table} PATCH ${r.status}: ${t}`);}
 }
 async function dbDelete(table,filters=[]){
   let url=SB_URL+'/rest/v1/'+table+'?';
   filters.forEach((f,i)=>url+=(i?'&':'')+f);
-  const r=await fetch(url,{method:'DELETE',headers:{...H,'Prefer':''}});
-  if(!r.ok)throw new Error(await r.text());
+  const r=await fetch(url,{method:'DELETE',mode:'cors',headers:{...H,'Prefer':''},body:undefined});
+  if(!r.ok){const t=await r.text();throw new Error(`${table} DELETE ${r.status}: ${t}`);}
 }
 
 let sups=[],ings=[],frows=[],vers=[],selMult=4,manPr=false,isort={col:'name',dir:1},costFrowsOverride=null;
@@ -503,18 +503,21 @@ function showLov(msg='Loading...'){document.getElementById('lot').textContent=ms
 function hideLov(){document.getElementById('lov').style.display='none';}
 
 async function init(){
-  showLov('Loading Ramu...');
+  showLov('Connecting to database...');
   try{
     await loadWS();
+    showLov('Loading suppliers...');
     await loadSups();
+    showLov('Loading ingredients...');
     await loadIngs();
+    showLov('Loading versions...');
     await loadVers();
     renderSups();renderIngs();renderVers();updInv();rcc();
     hideLov();toast('Ramu loaded','success');
   }catch(e){
     hideLov();
     console.error('Init error:',e);
-    toast('Load error: '+String(e.message||e),'error',6000);
+    toast('Error: '+String(e.message||e),'error',10000);
   }
 }
 
@@ -598,8 +601,17 @@ async function delSup(id){
 }
 
 async function loadIngs(){
-  const data=await dbGet('ingredients','id,name,category,cost_per_g,stock_g,reorder_at_g,last_purchase,supplier_id,workspace_id,suppliers(name)',['workspace_id=eq.'+WID]);
-  ings=(data||[]).map(i=>({id:i.id,name:i.name||'',category:i.category||'',cost_per_g:i.cost_per_g||0,stock_g:i.stock_g||0,reorder_at_g:i.reorder_at_g||0,last_purchase:i.last_purchase||null,supplier_id:i.supplier_id||null,workspace_id:i.workspace_id,supplierName:i.suppliers?.name||''}));
+  const data=await dbGet(
+    'ingredients',
+    'id,name,category,cost_per_g,stock_g,reorder_at_g,last_purchase,supplier_id,workspace_id,suppliers(name)',
+    ['workspace_id=eq.'+WID]
+  );
+  ings=(data||[]).map(i=>({
+    id:i.id,name:i.name||'',category:i.category||'',
+    cost_per_g:i.cost_per_g||0,stock_g:i.stock_g||0,reorder_at_g:i.reorder_at_g||0,
+    last_purchase:i.last_purchase||null,supplier_id:i.supplier_id||null,
+    workspace_id:i.workspace_id,supplierName:i.suppliers?.name||''
+  }));
 }
 
 let pendingIngs=[];
@@ -1081,8 +1093,20 @@ function expPDF(){
 }
 
 async function loadVers(){
-  const data=await dbGet('formula_versions','id,version_number,notes,saved_at,formula_id,formulas!inner(name,base_volume_ml,workspace_id),formula_rows(id,ingredient_name,amount_g,cost_per_g_snapshot,ingredient_id)',['formulas.workspace_id=eq.'+WID,'order=saved_at.desc']);
-  vers=(data||[]).map(v=>({id:v.id,version_number:v.version_number,notes:v.notes||'',saved_at:v.saved_at,formula_id:v.formula_id,formulas:{name:v.formulas?.name||'',base_volume_ml:v.formulas?.base_volume_ml||100},formula_rows:(v.formula_rows||[]).map(r=>({id:r.id,ingredient_name:r.ingredient_name||'',amount_g:r.amount_g||0,cost_per_g_snapshot:r.cost_per_g_snapshot||0,ingredient_id:r.ingredient_id||null}))}));
+  const data=await dbGet(
+    'formula_versions',
+    'id,version_number,notes,saved_at,formula_id,formulas!inner(name,base_volume_ml,workspace_id),formula_rows(id,ingredient_name,amount_g,cost_per_g_snapshot,ingredient_id)',
+    ['formulas.workspace_id=eq.'+WID,'order=saved_at.desc']
+  );
+  vers=(data||[]).filter(v=>v.formulas).map(v=>({
+    id:v.id,version_number:v.version_number,notes:v.notes||'',saved_at:v.saved_at,formula_id:v.formula_id,
+    formulas:{name:v.formulas?.name||'',base_volume_ml:v.formulas?.base_volume_ml||100},
+    formula_rows:(v.formula_rows||[]).map(r=>({
+      id:r.id,ingredient_name:r.ingredient_name||'',
+      amount_g:r.amount_g||0,cost_per_g_snapshot:r.cost_per_g_snapshot||0,
+      ingredient_id:r.ingredient_id||null
+    }))
+  }));
 }
 async function saveVer(){
   const name=document.getElementById('fname').value||'Untitled',vol=parseFloat(document.getElementById('bvol').value)||100;
@@ -1090,7 +1114,7 @@ async function saveVer(){
   toast('Saving...','loading',2000);
   try{
     let fid;
-    const exArr=await dbGet('formulas','id',['workspace_id=eq.'+WID,'name=eq.'+encodeURIComponent(name)]);
+    const exArr=await dbGet('formulas','id',['workspace_id=eq.'+WID,'name=eq.'+encodeURIComponent(name),'limit=1']);
     if(exArr&&exArr.length){fid=exArr[0].id;await dbUpdate('formulas',{base_volume_ml:vol},['id=eq.'+fid]);}
     else{const fa=await dbInsert('formulas',{workspace_id:WID,name,base_volume_ml:vol,status:'active'});fid=fa[0].id;}
     const vdArr=await dbGet('formula_versions','version_number',['formula_id=eq.'+fid,'order=version_number.desc','limit=1']);
