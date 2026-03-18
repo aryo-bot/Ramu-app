@@ -516,8 +516,14 @@ async function init(){
     hideLov();toast('Ramu loaded','success');
   }catch(e){
     hideLov();
-    console.error('Init error:',e);
-    toast('Error: '+String(e.message||e),'error',10000);
+    const msg=String(e.message||e);
+    console.error('Ramu init error:',msg,e);
+    document.body.insertAdjacentHTML('beforeend',
+      `<div style="position:fixed;top:0;left:0;right:0;background:#E24B4A;color:white;padding:16px 20px;font-size:13px;z-index:99999;font-family:monospace;white-space:pre-wrap;word-break:break-all">
+        ERROR: ${msg}
+        <br><br><button onclick="this.parentNode.remove()" style="background:white;color:#E24B4A;border:none;padding:4px 10px;cursor:pointer;border-radius:4px;font-size:12px">Dismiss</button>
+      </div>`
+    );
   }
 }
 
@@ -1186,8 +1192,6 @@ function populateCostFormulaSelector(){
   });
   if(cur)sel.value=cur;
 }
-
-let costFrowsOverride=null;
 
 function loadFormulaForCost(formulaId){
   const meta=document.getElementById('cost-formula-meta');
