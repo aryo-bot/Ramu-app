@@ -1056,6 +1056,7 @@ function renderFRows(){
     const roleBadge=role?`<span style="font-size:10px;padding:1px 6px;border-radius:20px;background:${roleColors[role]||'var(--gray-100)'};color:var(--gray-600);margin-left:4px">${role}</span>`:'';
     const refData=getRef(row.name);
     const refBtn=refData?`<span title="${refData.odor||''} | Typical: ${refData.usage[0]}-${refData.usage[1]}% | ${refData.volatility}" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--gray-200);font-size:9px;color:var(--gray-400);cursor:help;margin-left:4px;flex-shrink:0" onclick="showRefPopup('${esc(row.name)}')">i</span>`:'';
+    const ifraSt=row.name?ifraStatus(row.name,pct):null;
     const ifraWarn=ifraSt&&ifraSt.type!=='ok'?`<div style="font-size:11px;color:${ifraSt.type==='banned'?'var(--red)':ifraSt.type==='over'?'var(--red)':'var(--amber)'};margin-top:2px">⚠ ${ifraSt.msg}</div>`:'';
 
     const pctCell=fMode==='pct'
