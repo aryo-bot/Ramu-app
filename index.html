@@ -197,17 +197,18 @@ textarea.ni{resize:vertical;line-height:1.5}
       </div>
     </div>
     <div style="overflow-x:auto">
-      <table class="tbl" style="min-width:820px">
+      <table class="tbl" style="min-width:920px">
         <thead><tr>
-          <th class="srt" style="width:18%" onclick="sortIng('name')">Ingredient <span id="sn" style="opacity:0.4">↕</span></th>
+          <th class="srt" style="width:17%" onclick="sortIng('name')">Ingredient <span id="sn" style="opacity:0.4">↕</span></th>
           <th style="width:10%">Category</th>
-          <th class="srt" style="width:12%" onclick="sortIng('supplier')">Supplier <span id="ss" style="opacity:0.4">↕</span></th>
-          <th style="width:9%">Cost/g (Rp)</th>
-          <th style="width:8%">Stock (g)</th>
-          <th style="width:8%">Reorder at</th>
-          <th style="width:10%">Last purchase</th>
-          <th style="width:9%">Status</th>
-          <th style="width:16%"></th>
+          <th style="width:8%">Role</th>
+          <th class="srt" style="width:11%" onclick="sortIng('supplier')">Supplier <span id="ss" style="opacity:0.4">↕</span></th>
+          <th style="width:8%">Cost/g (Rp)</th>
+          <th style="width:7%">Stock (g)</th>
+          <th style="width:7%">Reorder at</th>
+          <th style="width:9%">Last purchase</th>
+          <th style="width:8%">Status</th>
+          <th style="width:15%"></th>
         </tr></thead>
         <tbody id="ibody"></tbody>
       </table>
@@ -232,22 +233,33 @@ textarea.ni{resize:vertical;line-height:1.5}
         <button id="mode-g" onclick="setFMode('g')" style="padding:6px 14px;font-size:13px;border:none;cursor:pointer;background:white;color:var(--gray-400);font-family:inherit;transition:all 0.15s">g first</button>
       </div></div>
     </div>
-    <button class="btn btn-primary" onclick="saveVer()">+ Save version</button>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <div class="fld" style="margin-bottom:0">
+        <label>Load saved</label>
+        <select class="ni" id="load-formula-sel" style="width:160px" onchange="loadFormulaIntoBuilder(this.value)">
+          <option value="">— select formula —</option>
+        </select>
+      </div>
+      <button class="btn" onclick="newFormula()" style="margin-bottom:0" title="Clear and start a new formula">New</button>
+      <button class="btn btn-primary" onclick="saveVer()">+ Save version</button>
+    </div>
   </div>
   <div id="pct-status" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;color:var(--gray-400)">
     <span>Total: <strong id="pct-total" style="color:var(--gray-900)">0%</strong></span>
     <span id="pct-hint" style="font-size:12px"></span>
+    <span id="g-total-display" style="font-size:12px;color:var(--gray-400)"></span>
   </div>
   <div id="falerts" style="margin-bottom:12px"></div>
   <div class="card">
     <table class="tbl">
       <thead><tr id="fhead">
-        <th style="width:30%">Ingredient</th>
-        <th style="width:12%" id="fh-pct">% of formula</th>
-        <th style="width:12%" id="fh-g">Amount (g)</th>
-        <th style="width:13%">Cost/g (Rp)</th>
+        <th style="width:26%">Ingredient</th>
+        <th style="width:8%">Role</th>
+        <th style="width:11%" id="fh-pct">% of formula</th>
+        <th style="width:11%" id="fh-g">Amount (g)</th>
+        <th style="width:12%">Cost/g (Rp)</th>
         <th style="width:18%">Visual %</th>
-        <th style="width:11%;text-align:right">Line cost</th>
+        <th style="width:10%;text-align:right">Line cost</th>
         <th style="width:4%"></th>
       </tr></thead>
       <tbody id="fbody"></tbody>
@@ -453,7 +465,8 @@ textarea.ni{resize:vertical;line-height:1.5}
 const SB_URL='https://ncrkzzhzruxanlsuszvb.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jcmt6emh6cnV4YW5sc3VzenZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODE1MDUsImV4cCI6MjA4OTM1NzUwNX0.-tWOhIvogLeaosztMBOBwg-UThiMz1Ga8S4ImZl1XyI';
 const WID='a1b2c3d4-0000-0000-0000-000000000002';
-const CATS=['Essential oil','Fragrance oil','Aroma chemical','Top note','Heart note','Base note','Synthetic','Diluent','Solvent','Fixative','Other'];
+const CATS=['Essential oil','Fragrance oil','Aroma chemical','Ready made fragrance','Top note','Heart note','Base note','Synthetic','Diluent','Solvent','Fixative','Other'];
+const ROLES=['—','Top','Mid','Base','Bridge','Musk','Accord'];
 
 const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Accept':'application/json','Prefer':'return=representation'};
 
@@ -512,7 +525,7 @@ async function init(){
     await loadIngs();
     showLov('Loading versions...');
     await loadVers();
-    renderSups();renderIngs();renderVers();updInv();rcc();
+    renderSups();renderIngs();renderVers();populateFormulaSelector();populateCostFormulaSelector();updInv();rcc();
     hideLov();toast('Ramu loaded','success');
   }catch(e){
     hideLov();
@@ -609,11 +622,11 @@ async function delSup(id){
 async function loadIngs(){
   const data=await dbGet(
     'ingredients',
-    'id,name,category,cost_per_g,stock_g,reorder_at_g,last_purchase,supplier_id,workspace_id,suppliers(name)',
+    'id,name,category,role,cost_per_g,stock_g,reorder_at_g,last_purchase,supplier_id,workspace_id,suppliers(name)',
     ['workspace_id=eq.'+WID]
   );
   ings=(data||[]).map(i=>({
-    id:i.id,name:i.name||'',category:i.category||'',
+    id:i.id,name:i.name||'',category:i.category||'',role:i.role||'—',
     cost_per_g:i.cost_per_g||0,stock_g:i.stock_g||0,reorder_at_g:i.reorder_at_g||0,
     last_purchase:i.last_purchase||null,supplier_id:i.supplier_id||null,
     workspace_id:i.workspace_id,supplierName:i.suppliers?.name||''
@@ -637,11 +650,13 @@ function ingRowHtml(ing,isPending,pidx){
   const st=stSt(ing);
   const sOpts=`<option value="">— no supplier —</option>`+sups.map(s=>`<option value="${s.id}"${s.id===ing.supplier_id?' selected':''}>${esc(s.name)}</option>`).join('');
   const cOpts=`<option value="">—</option>`+CATS.map(c=>`<option${c===ing.category?' selected':''}>${c}</option>`).join('');
+  const rOpts=ROLES.map(r=>`<option${r===ing.role?' selected':''}>${r}</option>`).join('');
   if(isPending){
     return `<tr class="row-pending" data-pidx="${pidx}">
       <td><input class="ni" value="${esc(ing.name||'')}" style="width:100%" placeholder="Ingredient name"
         oninput="pendingIngs[${pidx}].name=this.value"></td>
       <td><select class="ni" style="width:100%" onchange="pendingIngs[${pidx}].category=this.value">${cOpts}</select></td>
+      <td><select class="ni" style="width:100%" onchange="pendingIngs[${pidx}].role=this.value">${rOpts}</select></td>
       <td><select class="ni" style="width:100%" onchange="pendingIngs[${pidx}].supplier_id=this.value||null">${sOpts}</select></td>
       <td><input class="ni" type="text" inputmode="decimal" value="${ing.cost_per_g||''}" placeholder="0" style="width:80px"
         oninput="pendingIngs[${pidx}].cost_per_g=parseFloat(this.value)||0"></td>
@@ -662,6 +677,7 @@ function ingRowHtml(ing,isPending,pidx){
     <td><input class="ni" value="${esc(ing.name)}" style="width:100%"
       onchange="updIngField('${ing.id}','name',this.value)"></td>
     <td><select class="ni" style="width:100%" onchange="updIngField('${ing.id}','category',this.value)">${cOpts}</select></td>
+    <td><select class="ni" style="width:100%" onchange="updIngField('${ing.id}','role',this.value)">${rOpts}</select></td>
     <td><select class="ni" style="width:100%" onchange="updIngField('${ing.id}','supplier_id',this.value||null)">${sOpts}</select></td>
     <td><input class="ni" type="text" inputmode="decimal" value="${ing.cost_per_g||0}" style="width:80px"
       onchange="updIngField('${ing.id}','cost_per_g',parseFloat(this.value)||0)"></td>
@@ -708,11 +724,11 @@ async function savePendingIng(pidx){
   const btn=document.querySelector(`#ibody tr[data-pidx="${pidx}"] .btn-save-row`);
   if(btn){btn.textContent='Saving...';btn.disabled=true;}
   try{
-    const arr=await dbInsert('ingredients',{workspace_id:WID,name:p.name.trim(),category:p.category||null,supplier_id:p.supplier_id||null,cost_per_g:p.cost_per_g||0,stock_g:p.stock_g||0,reorder_at_g:p.reorder_at_g||0,last_purchase:p.last_purchase||null});
+    const arr=await dbInsert('ingredients',{workspace_id:WID,name:p.name.trim(),category:p.category||null,role:p.role||null,supplier_id:p.supplier_id||null,cost_per_g:p.cost_per_g||0,stock_g:p.stock_g||0,reorder_at_g:p.reorder_at_g||0,last_purchase:p.last_purchase||null});
     const data=arr&&arr.length?arr[0]:null;
     if(!data)throw new Error('No data returned');
     const supName=sups.find(s=>s.id===data.supplier_id)?.name||'';
-    const plain={id:data.id,name:data.name||'',category:data.category||'',cost_per_g:data.cost_per_g||0,stock_g:data.stock_g||0,reorder_at_g:data.reorder_at_g||0,last_purchase:data.last_purchase||null,supplier_id:data.supplier_id||null,workspace_id:data.workspace_id,supplierName:supName};
+    const plain={id:data.id,name:data.name||'',category:data.category||'',role:data.role||'—',cost_per_g:data.cost_per_g||0,stock_g:data.stock_g||0,reorder_at_g:data.reorder_at_g||0,last_purchase:data.last_purchase||null,supplier_id:data.supplier_id||null,workspace_id:data.workspace_id,supplierName:supName};
     pendingIngs.splice(pidx,1);
     ings.unshift(plain);
     pendingIngs.unshift({name:'',category:'',supplier_id:null,cost_per_g:0,stock_g:0,reorder_at_g:0,last_purchase:null});
@@ -734,11 +750,12 @@ function ingRowData(id){
   return{
     name:inputs[0]?.value||'',
     category:inputs[1]?.value||null,
-    supplier_id:inputs[2]?.value||null,
-    cost_per_g:parseFloat(inputs[3]?.value)||0,
-    stock_g:parseFloat(inputs[4]?.value)||0,
-    reorder_at_g:parseFloat(inputs[5]?.value)||0,
-    last_purchase:inputs[6]?.value||null,
+    role:inputs[2]?.value||null,
+    supplier_id:inputs[3]?.value||null,
+    cost_per_g:parseFloat(inputs[4]?.value)||0,
+    stock_g:parseFloat(inputs[5]?.value)||0,
+    reorder_at_g:parseFloat(inputs[6]?.value)||0,
+    last_purchase:inputs[7]?.value||null,
   };
 }
 
@@ -800,18 +817,36 @@ function pctToG(pct){
 function gToPct(g,tg){return tg>0?((parseFloat(g)||0)/tg*100):0;}
 
 function updPctStatus(){
-  const totalPct=frows.reduce((s,r)=>s+(parseFloat(r.pct)||0),0);
-  const ptEl=document.getElementById('pct-total');
-  const phEl=document.getElementById('pct-hint');
-  if(ptEl){
-    ptEl.textContent=totalPct.toFixed(2)+'%';
-    ptEl.style.color=Math.abs(totalPct-100)<0.01?'var(--green)':totalPct>100?'var(--red)':'var(--gray-900)';
-  }
-  if(phEl){
-    if(Math.abs(totalPct-100)<0.01)phEl.textContent='Perfect — formula adds up to 100%';
-    else if(totalPct>100)phEl.textContent='Over 100% — reduce some values';
-    else if(totalPct>0)phEl.textContent=(100-totalPct).toFixed(2)+'% remaining';
-    else phEl.textContent='Enter % per ingredient — grams calculate from base volume';
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  const psEl=document.getElementById('pct-status');
+  if(psEl)psEl.style.display='flex';
+  if(fMode==='pct'){
+    const totalPct=frows.reduce((s,r)=>s+(parseFloat(r.pct)||0),0);
+    const ptEl=document.getElementById('pct-total');
+    const phEl=document.getElementById('pct-hint');
+    const gtEl=document.getElementById('g-total-display');
+    if(ptEl){ptEl.textContent=totalPct.toFixed(2)+'%';ptEl.style.color=Math.abs(totalPct-100)<0.01?'var(--green)':totalPct>100?'var(--red)':'var(--gray-900)';}
+    if(phEl){
+      if(Math.abs(totalPct-100)<0.01)phEl.textContent='✓ 100%';
+      else if(totalPct>100)phEl.textContent='Over by '+(totalPct-100).toFixed(2)+'%';
+      else if(totalPct>0)phEl.textContent=(100-totalPct).toFixed(2)+'% remaining';
+      else phEl.textContent='Enter % per ingredient';
+    }
+    if(gtEl)gtEl.textContent='= '+(totalPct*vol/100).toFixed(3)+'g';
+  } else {
+    const totalG=frows.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+    const totalPct=vol>0?(totalG/vol*100):0;
+    const ptEl=document.getElementById('pct-total');
+    const phEl=document.getElementById('pct-hint');
+    const gtEl=document.getElementById('g-total-display');
+    if(ptEl){ptEl.textContent=totalPct.toFixed(2)+'%';ptEl.style.color=Math.abs(totalPct-100)<0.01?'var(--green)':totalPct>100?'var(--red)':'var(--gray-900)';}
+    if(phEl){
+      if(Math.abs(totalPct-100)<0.01)phEl.textContent='✓ 100%';
+      else if(totalPct>100)phEl.textContent='Over by '+(totalPct-100).toFixed(2)+'%';
+      else if(totalPct>0)phEl.textContent=(100-totalPct).toFixed(2)+'% remaining';
+      else phEl.textContent='Enter grams per ingredient';
+    }
+    if(gtEl)gtEl.textContent=totalG.toFixed(3)+'g / '+vol+'g base';
   }
 }
 
@@ -820,7 +855,7 @@ function renderFRows(){
   const vol=parseFloat(document.getElementById('bvol').value)||100;
   const{g:tg}=getFTotals();
   const psEl=document.getElementById('pct-status');
-  if(psEl)psEl.style.display=fMode==='pct'?'flex':'none';
+  if(psEl)psEl.style.display='flex';
   updPctStatus();
   if(!frows.length){
     body.innerHTML=`<tr><td colspan="7"><div class="emp">Add ingredients to build your formula.</div></td></tr>`;
@@ -834,6 +869,9 @@ function renderFRows(){
     const m=ings.find(i=>i.name.toLowerCase()===row.name.toLowerCase());
     const cbg=m?'style="background:#EAF3DE"':'';
     const sw=m&&(m.stock_g||0)<gVal?`<div style="font-size:11px;color:var(--amber);margin-top:2px">Only ${m.stock_g}g in stock</div>`:'';
+    const roleColors={'Top':'#E0F2FA','Mid':'#EAF3DE','Base':'#F3EAD8','Bridge':'#EDE0F2','Musk':'#F2E0E8','Accord':'#F2F2E0'};
+    const role=m?.role&&m.role!=='—'?m.role:null;
+    const roleBadge=role?`<span style="font-size:10px;padding:1px 6px;border-radius:20px;background:${roleColors[role]||'var(--gray-100)'};color:var(--gray-600);margin-left:4px">${role}</span>`:'';
 
     const pctCell=fMode==='pct'
       ?`<input class="ni" type="text" inputmode="decimal" id="pct-${idx}" value="${row.pct??''}" placeholder="0.00" style="width:72px;font-weight:500"
@@ -856,7 +894,8 @@ function renderFRows(){
           onblur="setTimeout(()=>cAC(${idx}),180)"
           onfocus="hAC(${idx},this.value)">
         <div class="ac-drop" id="drop-${idx}"></div>
-      </div>${sw}</td>
+      </div>${roleBadge}${sw}</td>
+      <td><span style="font-size:12px;color:var(--gray-600)">${role||'—'}</span></td>
       <td>${pctCell}</td>
       <td>${gCell}</td>
       <td><input class="ni" type="text" inputmode="decimal" id="cpg-${idx}" value="${row.costPerG??''}" placeholder="0" style="width:80px" ${cbg}
@@ -1166,10 +1205,47 @@ function restVer(ri){
   switchTab('formula');renderFRows();toast(`Restored ${v.formulas.name} v${v.version_number}`,'success');
 }
 
+function newFormula(){
+  if(frows.length&&!confirm('Clear current formula and start fresh?'))return;
+  frows=[];
+  document.getElementById('fname').value='New formula';
+  document.getElementById('bvol').value='100';
+  const sel=document.getElementById('load-formula-sel');if(sel)sel.value='';
+  renderFRows();toast('New formula started','success',1500);
+}
+
+function populateFormulaSelector(){
+  const sel=document.getElementById('load-formula-sel');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— select formula —</option>';
+  const seen=new Set();
+  vers.forEach(v=>{
+    if(!seen.has(v.formula_id)){
+      seen.add(v.formula_id);
+      const opt=document.createElement('option');
+      opt.value=v.formula_id;
+      opt.textContent=v.formulas.name;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+function loadFormulaIntoBuilder(formulaId){
+  if(!formulaId)return;
+  const latest=vers.find(v=>v.formula_id===formulaId);
+  if(!latest){toast('No saved versions found','error');return;}
+  const vol=latest.formulas.base_volume_ml||100;
+  frows=(latest.formula_rows||[]).map(r=>({name:r.ingredient_name,amount:r.amount_g,pct:vol>0?(r.amount_g/vol*100):0,costPerG:r.cost_per_g_snapshot}));
+  document.getElementById('fname').value=latest.formulas.name;
+  document.getElementById('bvol').value=vol;
+  renderFRows();toast(`Loaded ${latest.formulas.name} v${latest.version_number}`,'success');
+}
+
 function switchTab(id){
   const ids=['suppliers','inventory','formula','cost','invoice','versions'];
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ids[i]===id));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+id));
+  if(id==='formula')populateFormulaSelector();
   if(id==='cost'){populateCostFormulaSelector();rcc();}
   if(id==='invoice')updInv();
   if(id==='versions')renderVers();
