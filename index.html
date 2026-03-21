@@ -120,6 +120,7 @@ textarea.ni{resize:vertical;line-height:1.5}
 @keyframes spin{to{transform:rotate(360deg)}}
 .srt{cursor:pointer;user-select:none}
 .srt:hover{color:var(--gray-900)!important}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .ref-filter-btn{font-family:inherit;font-size:12px;padding:4px 12px;border-radius:20px;border:0.5px solid var(--border);background:white;color:var(--gray-600);cursor:pointer;transition:all 0.15s}
 .ref-filter-btn:hover{border-color:var(--blue);color:var(--blue)}
 .ref-filter-btn.active{background:var(--blue);color:white;border-color:var(--blue)}
@@ -143,7 +144,103 @@ textarea.ni{resize:vertical;line-height:1.5}
 .unsaved-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-left:6px;vertical-align:middle}
 .btn-save-row{font-family:inherit;font-size:12px;border-radius:var(--radius);padding:4px 10px;cursor:pointer;border:0.5px solid var(--green);background:white;color:var(--green);transition:all 0.15s;white-space:nowrap}
 .btn-save-row:hover{background:var(--green);color:white}
-@media(max-width:600px){.metrics{grid-template-columns:repeat(2,1fr)}.pg{grid-template-columns:repeat(2,1fr)}.tc{grid-template-columns:1fr}.sg{grid-template-columns:1fr}}
+@media(max-width:768px){
+  /* ── LAYOUT ── */
+  .main{padding:16px 12px;padding-bottom:80px}
+  .header{padding:0 16px;height:48px}
+  .logo-wordmark{font-size:16px}
+  .ws-badge{font-size:10px;padding:2px 8px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ── BOTTOM TAB BAR ── */
+  .tabs{
+    position:fixed;bottom:0;left:0;right:0;top:auto;
+    padding:0;border-bottom:none;border-top:0.5px solid var(--border);
+    background:white;z-index:99;
+    display:grid;grid-template-columns:repeat(7,1fr);
+    box-shadow:0 -2px 12px rgba(0,0,0,0.06);
+  }
+  .tab{
+    padding:8px 2px 6px;font-size:9px;border-bottom:none;
+    border-top:2px solid transparent;margin-bottom:0;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    letter-spacing:0;
+  }
+  .tab.active{border-top-color:var(--blue);border-bottom:none;color:var(--blue)}
+  .tab::before{content:attr(data-icon);font-size:16px;line-height:1}
+
+  /* ── STICKY HEADER OFFSET ── */
+  body{padding-top:0}
+
+  /* ── METRICS ── */
+  .metrics{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+  .metric{padding:10px 12px}
+  .mval{font-size:18px}
+
+  /* ── CARDS ── */
+  .card-hdr{flex-wrap:wrap;gap:8px;padding:10px 12px}
+  .card-hdr .btn-sm{font-size:11px;padding:4px 10px}
+
+  /* ── TABLES — horizontal scroll ── */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl th,.tbl td{padding:8px 8px;font-size:12px}
+  .ni{font-size:13px;padding:8px 8px;min-height:40px}
+  select.ni{min-height:40px}
+
+  /* ── BUTTONS — larger touch targets ── */
+  .btn{padding:9px 14px;min-height:40px}
+  .btn-save-row{padding:7px 12px;min-height:36px;font-size:12px}
+  .btn-add{padding:12px;min-height:44px}
+  .btn-del{padding:6px 10px;min-height:36px;font-size:18px}
+
+  /* ── FORMULA BUILDER HEADER ── */
+  #panel-formula>div:first-child{flex-direction:column;align-items:stretch}
+  #panel-formula>div:first-child>div{min-width:0!important}
+  #panel-formula>div:first-child .fld input{font-size:15px!important}
+
+  /* ── FORMULA MODE TOGGLE ── */
+  #panel-formula>div:first-child>div:last-child{flex-wrap:wrap;gap:6px}
+
+  /* ── INVOICE ── */
+  #panel-invoice>div:first-child{grid-template-columns:1fr!important;gap:1rem}
+  .inv-card{padding:1rem}
+  .tw{min-width:0;width:100%}
+
+  /* ── SUPPLIER GRID ── */
+  .sg{grid-template-columns:1fr}
+
+  /* ── COST PANEL ── */
+  .pg{grid-template-columns:repeat(2,1fr)}
+
+  /* ── VERSIONS ── */
+  .vrow{flex-direction:column;align-items:flex-start;gap:8px}
+  .vrow .btn{align-self:flex-end}
+
+  /* ── REF GRID ── */
+  #ref-grid{grid-template-columns:1fr!important}
+
+  /* ── MODALS ── */
+  .lo{padding:16px;width:100%!important;max-width:100vw;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;right:0}
+  .lov{align-items:flex-end}
+  .tc{grid-template-columns:1fr}
+
+  /* ── TOASTS ── */
+  .toast-wrap{bottom:80px;right:12px;left:12px}
+  .toast{max-width:100%}
+
+  /* ── PCT STATUS ── */
+  #pct-status{flex-wrap:wrap;font-size:12px}
+}
+
+@media(max-width:400px){
+  .tabs{grid-template-columns:repeat(7,1fr)}
+  .tab{font-size:8px;padding:6px 1px 5px}
+  .tab::before{font-size:14px}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(min-width:769px){
+  .tab::before{display:none}
+}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
@@ -170,13 +267,13 @@ textarea.ni{resize:vertical;line-height:1.5}
 </header>
 
 <nav class="tabs">
-  <button class="tab active" onclick="switchTab('suppliers')">Suppliers</button>
-  <button class="tab" onclick="switchTab('inventory')">Ingredients</button>
-  <button class="tab" onclick="switchTab('formula')">Formula builder</button>
-  <button class="tab" onclick="switchTab('cost')">Cost &amp; pricing</button>
-  <button class="tab" onclick="switchTab('invoice')">Invoice</button>
-  <button class="tab" onclick="switchTab('versions')">Versions</button>
-  <button class="tab" onclick="switchTab('reference')">Reference</button>
+  <button class="tab active" data-icon="🏭" onclick="switchTab('suppliers')">Suppliers</button>
+  <button class="tab" data-icon="🧪" onclick="switchTab('inventory')">Ingredients</button>
+  <button class="tab" data-icon="⚗️" onclick="switchTab('formula')">Formula</button>
+  <button class="tab" data-icon="💰" onclick="switchTab('cost')">Pricing</button>
+  <button class="tab" data-icon="🧾" onclick="switchTab('invoice')">Invoice</button>
+  <button class="tab" data-icon="📁" onclick="switchTab('versions')">Versions</button>
+  <button class="tab" data-icon="📖" onclick="switchTab('reference')">Reference</button>
 </nav>
 
 <main class="main">
@@ -215,7 +312,7 @@ textarea.ni{resize:vertical;line-height:1.5}
         <button class="btn btn-primary btn-sm" onclick="addIngRow()">+ Add ingredient</button>
       </div>
     </div>
-    <div style="overflow-x:auto">
+    <div class="tbl-wrap">
       <table class="tbl" style="min-width:920px">
         <thead><tr>
           <th class="srt" style="width:17%" onclick="sortIng('name')">Ingredient <span id="sn" style="opacity:0.4">↕</span></th>
@@ -270,19 +367,21 @@ textarea.ni{resize:vertical;line-height:1.5}
   </div>
   <div id="falerts" style="margin-bottom:12px"></div>
   <div class="card">
-    <table class="tbl">
+    <div class="tbl-wrap">
+    <table class="tbl" style="min-width:560px">
       <thead><tr id="fhead">
         <th style="width:26%">Ingredient</th>
         <th style="width:8%">Role</th>
-        <th style="width:11%" id="fh-pct">% of formula</th>
+        <th style="width:11%" id="fh-pct">%</th>
         <th style="width:11%" id="fh-g">Amount (g)</th>
         <th style="width:12%">Cost/g (Rp)</th>
         <th style="width:18%">Visual %</th>
-        <th style="width:10%;text-align:right">Line cost</th>
+        <th style="width:10%;text-align:right">Cost</th>
         <th style="width:4%"></th>
       </tr></thead>
       <tbody id="fbody"></tbody>
     </table>
+    </div>
     <button class="btn-add" onclick="addFRow()">+ Add ingredient</button>
   </div>
   <div class="metrics">
