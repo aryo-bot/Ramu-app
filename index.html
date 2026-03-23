@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ramu — tools for serious makers</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231A6B8A'/%3E%3Cpath d='M7 25L7 7Q7 7 12.5 7Q21 7 21 14Q21 21 12.5 21L7 21' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Cpath d='M12 21L20 25' stroke='white' stroke-width='2' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='16.5' cy='14' r='3' fill='%23EF9F27'/%3E%3C/svg%3E">
+<style>
+:root{--blue:#1A6B8A;--blue-light:#E0F2FA;--blue-dark:#0B2E3D;--amber:#EF9F27;--amber-light:#FDF3E3;--green:#1D9E75;--red:#E24B4A;--red-light:#FCEBEB;--gray-50:#F8F8F7;--gray-100:#F1EFE8;--gray-200:#D3D1C7;--gray-400:#888780;--gray-600:#5F5E5A;--gray-900:#1C1C1A;--border:rgba(0,0,0,0.1);--radius:8px;--radius-lg:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--gray-50);color:var(--gray-900);min-height:100vh;font-size:14px}
+.header{background:var(--blue-dark);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-wordmark{font-size:18px;font-weight:500;letter-spacing:0.1em;color:white;display:flex;align-items:center;gap:3px}
+.logo-dot{width:5px;height:5px;border-radius:50%;background:var(--amber);margin-bottom:1px}
+.ws-badge{background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.15);border-radius:20px;padding:3px 10px;font-size:11px;color:rgba(255,255,255,0.7)}
+.tabs{background:white;border-bottom:0.5px solid var(--border);padding:0 24px;display:flex;position:sticky;top:52px;z-index:99}
+.tab{padding:12px 16px;font-size:13px;color:var(--gray-400);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap;font-family:inherit;transition:color 0.15s}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+.tab:hover:not(.active){color:var(--gray-900)}
+.main{padding:24px;max-width:1100px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+.toast-wrap{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+.toast{background:var(--gray-900);color:white;padding:10px 16px;border-radius:var(--radius);font-size:13px;opacity:0;transform:translateY(8px);transition:all 0.2s;display:flex;align-items:center;gap:8px;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success::before,.toast.error::before,.toast.loading::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.toast.success::before{background:var(--green)}
+.toast.error::before{background:var(--red)}
+.toast.loading::before{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.metric{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
+.mlbl{font-size:11px;color:var(--gray-400);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.04em}
+.mval{font-size:22px;font-weight:500}
+.msub{font-size:11px;color:var(--gray-400);margin-top:3px}
+.card{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:visible;margin-bottom:16px}
+.card-hdr{padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.card-title{font-size:11px;font-weight:500;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.05em}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:11px;color:var(--gray-400);font-weight:500;text-align:left;padding:8px 12px;border-bottom:0.5px solid var(--border);white-space:nowrap;background:var(--gray-50);text-transform:uppercase;letter-spacing:0.03em}
+.tbl td{padding:8px 12px;border-bottom:0.5px solid var(--border);vertical-align:middle;font-size:13px}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--gray-50)}
+.ni{border:0.5px solid var(--border);border-radius:var(--radius);padding:6px 8px;background:white;color:var(--gray-900);font-family:inherit;font-size:13px;-moz-appearance:textfield;transition:border-color 0.15s}
+.ni::-webkit-outer-spin-button,.ni::-webkit-inner-spin-button{-webkit-appearance:none}
+.ni:focus{outline:none;border-color:var(--blue)}
+select.ni{cursor:pointer}
+textarea.ni{resize:vertical;line-height:1.5}
+.btn{font-family:inherit;font-size:13px;border-radius:var(--radius);padding:7px 14px;cursor:pointer;border:0.5px solid var(--border);background:white;color:var(--gray-900);transition:all 0.15s;white-space:nowrap}
+.btn:hover{background:var(--gray-100)}
+.btn-primary{background:var(--blue);color:white;border-color:var(--blue)}
+.btn-primary:hover{background:var(--blue-dark);border-color:var(--blue-dark)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-add{width:100%;background:none;border:0.5px dashed var(--gray-200);color:var(--gray-400);padding:8px;font-size:13px;border-radius:var(--radius);cursor:pointer;margin-top:8px;font-family:inherit;transition:all 0.15s}
+.btn-add:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.btn-del{border:none;background:none;cursor:pointer;color:var(--gray-200);padding:3px 7px;border-radius:var(--radius);font-size:15px;transition:all 0.15s}
+.btn-del:hover{background:var(--red-light);color:var(--red)}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px}
+.b-ok{background:#EAF3DE;color:#3B6D11}
+.b-low{background:#FAEEDA;color:#854F0B}
+.b-out{background:var(--red-light);color:#A32D2D}
+.alert{border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
+.alert.show{display:block}
+.a-warn{background:#FAEEDA;border:0.5px solid var(--amber);color:#854F0B}
+.ac-wrap{position:relative}
+.ac-drop{position:fixed;background:white;border:0.5px solid var(--border);border-radius:var(--radius);z-index:9000;max-height:200px;overflow-y:auto;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.14);min-width:220px}
+.ac-item{padding:7px 10px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.ac-item:hover,.ac-item.ac-active{background:var(--blue-light)}
+.ac-meta{font-size:11px;color:var(--gray-400)}
+.pg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1rem}
+.pc{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;cursor:pointer;transition:border-color 0.15s}
+.pc:hover{border-color:var(--blue)}
+.pc.sel{border:2px solid var(--blue)}
+.pc .rec{font-size:10px;background:var(--blue-light);color:var(--blue);padding:2px 7px;border-radius:20px;margin-bottom:6px;display:inline-block}
+.mbw{height:4px;background:var(--gray-100);border-radius:2px;overflow:hidden;margin-top:8px}
+.mb{height:100%;border-radius:2px;transition:width 0.3s}
+.mb-g{background:var(--green)}.mb-w{background:var(--amber)}.mb-b{background:var(--red)}
+.pbw{margin-top:3px;height:3px;background:var(--gray-100);border-radius:2px;overflow:hidden}
+.pb{height:100%;background:var(--blue);border-radius:2px;transition:width 0.2s}
+.inv-card{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:2rem;margin-bottom:1rem}
+.ii{font-size:13px;border:none;border-bottom:0.5px solid var(--border);border-radius:0;padding:3px 0;background:transparent;color:var(--gray-900);font-family:inherit;width:100%;margin-bottom:6px;transition:border-color 0.15s}
+.ii:focus{outline:none;border-bottom-color:var(--blue)}
+.it{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:1rem}
+.it th{font-size:11px;color:var(--gray-400);font-weight:500;text-align:left;padding:6px 0;border-bottom:0.5px solid var(--border);text-transform:uppercase;letter-spacing:0.03em}
+.it td{padding:8px 0;border-bottom:0.5px solid var(--border)}
+.it td:last-child,.it th:last-child{text-align:right}
+.tw{display:flex;flex-direction:column;align-items:flex-end;gap:0;font-size:13px;min-width:260px}
+.tr{display:flex;justify-content:space-between;gap:32px;padding:5px 0;width:100%}
+.tr span:first-child{color:var(--gray-400)}
+.tr.grand{font-weight:500;font-size:15px;border-top:1px solid var(--gray-900);padding-top:8px;margin-top:4px}
+.tr.grand span:first-child{color:var(--gray-900)}
+.vrow{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);margin-bottom:8px}
+.vrow.cur{border:2px solid var(--blue)}
+.vbadge{font-size:10px;background:var(--blue-light);color:var(--blue);padding:2px 8px;border-radius:20px;margin-left:6px}
+.sg{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.sc{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;transition:border-color 0.15s}
+.sc:hover{border-color:var(--blue)}
+.sn{font-size:14px;font-weight:500;margin-bottom:4px}
+.sm{font-size:12px;color:var(--gray-400);line-height:1.6}
+.lov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center}
+.lo{background:white;border-radius:var(--radius-lg);padding:24px;width:480px;max-width:90vw}
+.loh{font-size:15px;font-weight:500;margin-bottom:16px}
+.tc{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fld label{font-size:11px;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.04em}
+.slbl{font-size:11px;font-weight:500;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+.emp{text-align:center;padding:40px;color:var(--gray-400);font-size:13px}
+.ii-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--gray-200);font-size:9px;font-weight:500;color:var(--gray-400);cursor:pointer;margin-left:4px;vertical-align:middle}
+.ii-icon:hover{background:var(--blue-light);color:var(--blue);border-color:var(--blue)}
+.tip{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;font-size:12px;margin-bottom:1rem;display:none;line-height:1.6;color:var(--gray-600);box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+.tip.show{display:block}
+.tip-title{font-weight:500;color:var(--gray-900);margin-bottom:8px;font-size:13px}
+.tip-warn{background:#FAEEDA;border-radius:var(--radius);padding:10px 12px;margin-top:10px;color:#854F0B;font-size:12px;line-height:1.6}
+.tip-warn strong{display:block;margin-bottom:4px}
+.tsm{display:flex;justify-content:space-between;padding:4px 0;border-bottom:0.5px solid var(--border);font-size:12px}
+.tsm:last-child{border-bottom:none}
+.tsm span:first-child{color:var(--gray-400)}
+.tsm span:last-child{font-weight:500}
+.spin{width:28px;height:28px;border:2.5px solid var(--gray-100);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.srt{cursor:pointer;user-select:none}
+.srt:hover{color:var(--gray-900)!important}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* Formula header */
+.fhdr{display:flex;gap:12px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap}
+.fhdr-name{flex:1;min-width:200px}
+.fhdr-vol{flex-shrink:0}
+.fhdr-mode{flex-shrink:0}
+.fhdr-actions{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.ref-filter-btn{font-family:inherit;font-size:12px;padding:4px 12px;border-radius:20px;border:0.5px solid var(--border);background:white;color:var(--gray-600);cursor:pointer;transition:all 0.15s}
+.ref-filter-btn:hover{border-color:var(--blue);color:var(--blue)}
+.ref-filter-btn.active{background:var(--blue);color:white;border-color:var(--blue)}
+.ref-card{background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;transition:border-color 0.15s}
+.ref-card:hover{border-color:var(--blue)}
+.ref-card.ifra-banned{border-color:var(--red);background:var(--red-light)}
+.ref-card.ifra-restricted{border-color:var(--amber)}
+.ref-name{font-size:13px;font-weight:500;margin-bottom:6px;color:var(--gray-900)}
+.ref-odor{font-size:12px;color:var(--gray-600);margin-bottom:8px;font-style:italic}
+.ref-rows{display:flex;flex-direction:column;gap:3px}
+.ref-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:0.5px solid var(--border)}
+.ref-row:last-child{border-bottom:none}
+.ref-row span:first-child{color:var(--gray-400)}
+.ref-row span:last-child{font-weight:500;text-align:right}
+.ref-ifra-badge{display:inline-block;font-size:10px;padding:1px 7px;border-radius:20px;margin-left:6px}
+.ref-ifra-banned{background:var(--red-light);color:var(--red)}
+.ref-ifra-limit{background:#FAEEDA;color:#854F0B}
+.ref-notes{font-size:11px;color:var(--gray-400);margin-top:8px;line-height:1.5;padding-top:6px;border-top:0.5px solid var(--border)}
+.row-pending td{background:#FFFBF0!important}
+.row-pending:hover td{background:#FFF6E0!important}
+.unsaved-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-left:6px;vertical-align:middle}
+.btn-save-row{font-family:inherit;font-size:12px;border-radius:var(--radius);padding:4px 10px;cursor:pointer;border:0.5px solid var(--green);background:white;color:var(--green);transition:all 0.15s;white-space:nowrap}
+.btn-save-row:hover{background:var(--green);color:white}
+@media(max-width:768px){
+  /* ── LAYOUT ── */
+  .main{padding:16px 12px;padding-bottom:80px}
+  .header{padding:0 16px;height:48px}
+  .logo-wordmark{font-size:16px}
+  .ws-badge{font-size:10px;padding:2px 8px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ── BOTTOM TAB BAR ── */
+  .tabs{
+    position:fixed;bottom:0;left:0;right:0;top:auto;
+    padding:0;border-bottom:none;border-top:0.5px solid var(--border);
+    background:white;z-index:99;
+    display:grid;grid-template-columns:repeat(7,1fr);
+    box-shadow:0 -2px 12px rgba(0,0,0,0.06);
+  }
+  .tab{
+    padding:8px 2px 6px;font-size:9px;border-bottom:none;
+    border-top:2px solid transparent;margin-bottom:0;
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    letter-spacing:0;
+  }
+  .tab.active{border-top-color:var(--blue);border-bottom:none;color:var(--blue)}
+  .tab::before{content:attr(data-icon);font-size:16px;line-height:1}
+
+  /* ── STICKY HEADER OFFSET ── */
+  body{padding-top:0}
+
+  /* ── METRICS ── */
+  .metrics{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+  .metric{padding:10px 12px}
+  .mval{font-size:18px}
+
+  /* ── CARDS ── */
+  .card-hdr{flex-wrap:wrap;gap:8px;padding:10px 12px}
+  .card-hdr .btn-sm{font-size:11px;padding:4px 10px}
+
+  /* ── TABLES — horizontal scroll ── */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl th,.tbl td{padding:8px 8px;font-size:12px}
+  .ni{font-size:13px;padding:8px 8px;min-height:40px}
+  select.ni{min-height:40px}
+
+  /* ── BUTTONS — larger touch targets ── */
+  .btn{padding:9px 14px;min-height:40px}
+  .btn-save-row{padding:7px 12px;min-height:36px;font-size:12px}
+  .btn-add{padding:12px;min-height:44px}
+  .btn-del{padding:6px 10px;min-height:36px;font-size:18px}
+
+  /* ── FORMULA BUILDER HEADER ── */
+  .fhdr{flex-direction:column;align-items:stretch;gap:10px}
+  .fhdr-name{min-width:0}
+  .fhdr-name input{font-size:15px!important}
+  .fhdr-vol,.fhdr-mode{display:flex;gap:12px;align-items:center}
+  .fhdr-vol .fld,.fhdr-mode .fld{margin-bottom:0;flex-direction:row;align-items:center;gap:8px}
+  .fhdr-vol label,.fhdr-mode label{white-space:nowrap;margin-bottom:0}
+  .fhdr-actions{flex-direction:row;flex-wrap:wrap;gap:8px}
+  .fhdr-actions .fld{flex:1;min-width:0;margin-bottom:0}
+  .fhdr-actions select{width:100%!important}
+
+  /* ── INVOICE ── */
+  #panel-invoice>div:first-child{grid-template-columns:1fr!important;gap:1rem}
+  .inv-card{padding:1rem}
+  .tw{min-width:0;width:100%}
+
+  /* ── SUPPLIER GRID ── */
+  .sg{grid-template-columns:1fr}
+
+  /* ── COST PANEL ── */
+  .pg{grid-template-columns:repeat(2,1fr)}
+
+  /* ── VERSIONS ── */
+  .vrow{flex-direction:column;align-items:flex-start;gap:8px}
+  .vrow .btn{align-self:flex-end}
+
+  /* ── REF GRID ── */
+  #ref-grid{grid-template-columns:1fr!important}
+
+  /* ── MODALS ── */
+  .lo{padding:16px;width:100%!important;max-width:100vw;border-radius:var(--radius-lg) var(--radius-lg) 0 0;position:fixed;bottom:0;left:0;right:0}
+  .lov{align-items:flex-end}
+  .tc{grid-template-columns:1fr}
+
+  /* ── TOASTS ── */
+  .toast-wrap{bottom:80px;right:12px;left:12px}
+  .toast{max-width:100%}
+
+  /* ── PCT STATUS ── */
+  #pct-status{flex-wrap:wrap;font-size:12px}
+}
+
+@media(max-width:400px){
+  .tabs{grid-template-columns:repeat(7,1fr)}
+  .tab{font-size:8px;padding:6px 1px 5px}
+  .tab::before{font-size:14px}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+}
+
+@media(min-width:769px){
+  .tab::before{display:none}
+}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="lov" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,0.85);z-index:9998;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+  <div class="spin"></div>
+  <div style="font-size:13px;color:var(--gray-400)" id="lot">Loading Ramu...</div>
+</div>
+<div class="toast-wrap" id="twrap"></div>
+
+<header class="header">
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="6" fill="#1A6B8A"/>
+      <path d="M7 21L7 7Q7 7 10.5 7Q15 7 15 11.5Q15 16 10.5 16L7 16" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M10 16L15.5 21" stroke="white" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+      <circle cx="11.5" cy="11.5" r="2.5" fill="#EF9F27"/>
+    </svg>
+    <div class="logo-wordmark">ramu<div class="logo-dot"></div></div>
+  </div>
+  <span class="ws-badge" id="wsbadge">Loading...</span>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-icon="🏭" onclick="switchTab('suppliers')">Suppliers</button>
+  <button class="tab" data-icon="🧪" onclick="switchTab('inventory')">Ingredients</button>
+  <button class="tab" data-icon="⚗️" onclick="switchTab('formula')">Formula</button>
+  <button class="tab" data-icon="💰" onclick="switchTab('cost')">Pricing</button>
+  <button class="tab" data-icon="🧾" onclick="switchTab('invoice')">Invoice</button>
+  <button class="tab" data-icon="📁" onclick="switchTab('versions')">Versions</button>
+  <button class="tab" data-icon="📖" onclick="switchTab('reference')">Reference</button>
+</nav>
+
+<main class="main">
+
+<!-- SUPPLIERS -->
+<div id="panel-suppliers" class="panel active">
+  <div class="metrics">
+    <div class="metric"><div class="mlbl">Total suppliers</div><div class="mval" id="s-total">—</div><div class="msub">in workspace</div></div>
+    <div class="metric"><div class="mlbl">Ingredients linked</div><div class="mval" id="s-ing">—</div><div class="msub">with a supplier</div></div>
+    <div class="metric"><div class="mlbl">Local (Indonesia)</div><div class="mval" id="s-local">—</div><div class="msub">suppliers</div></div>
+    <div class="metric"><div class="mlbl">International</div><div class="mval" id="s-intl">—</div><div class="msub">suppliers</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Supplier directory</span>
+      <button class="btn btn-primary btn-sm" onclick="openSupMod()">+ Add supplier</button>
+    </div>
+    <div id="sgrid" style="padding:16px"><div class="emp">Loading...</div></div>
+  </div>
+</div>
+
+<!-- INGREDIENTS -->
+<div id="panel-inventory" class="panel">
+  <div class="alert a-warn" id="ialert"></div>
+  <div class="metrics">
+    <div class="metric"><div class="mlbl">Total ingredients</div><div class="mval" id="i-total">—</div><div class="msub">in master list</div></div>
+    <div class="metric"><div class="mlbl">Stock value</div><div class="mval" id="i-val">—</div><div class="msub">Rp</div></div>
+    <div class="metric"><div class="mlbl">Low stock</div><div class="mval" id="i-low" style="color:var(--amber)">—</div><div class="msub">need reorder</div></div>
+    <div class="metric"><div class="mlbl">Out of stock</div><div class="mval" id="i-out" style="color:var(--red)">—</div><div class="msub">materials</div></div>
+  </div>
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Master ingredient list</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" class="ni" id="isearch" placeholder="Search..." style="width:160px" oninput="renderIngs()">
+        <button class="btn btn-primary btn-sm" onclick="addIngRow()">+ Add ingredient</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl" style="min-width:920px">
+        <thead><tr>
+          <th class="srt" style="width:17%" onclick="sortIng('name')">Ingredient <span id="sn" style="opacity:0.4">↕</span></th>
+          <th style="width:10%">Category</th>
+          <th style="width:8%">Role</th>
+          <th class="srt" style="width:11%" onclick="sortIng('supplier')">Supplier <span id="ss" style="opacity:0.4">↕</span></th>
+          <th style="width:8%">Cost/g (Rp)</th>
+          <th style="width:7%">Stock (g)</th>
+          <th style="width:7%">Reorder at</th>
+          <th style="width:9%">Last purchase</th>
+          <th style="width:8%">Status</th>
+          <th style="width:15%"></th>
+        </tr></thead>
+        <tbody id="ibody"></tbody>
+      </table>
+    </div>
+    <button class="btn-add" onclick="addIngRow()">+ Add ingredient to master list</button>
+  </div>
+</div>
+
+<!-- FORMULA -->
+<div id="panel-formula" class="panel">
+  <div class="fhdr">
+    <div class="fhdr-name">
+      <div class="fld" style="margin-bottom:0"><label>Formula name</label>
+      <input id="fname" value="Akar v4" class="ni" style="width:100%;font-size:16px;font-weight:500" oninput="updInv()"></div>
+    </div>
+    <div class="fhdr-vol">
+      <div class="fld" style="margin-bottom:0"><label>Base volume (ml)</label>
+      <input id="bvol" type="text" inputmode="decimal" value="100" class="ni" style="width:80px" oninput="recalc()"></div>
+    </div>
+    <div class="fhdr-mode">
+      <div class="fld" style="margin-bottom:0"><label>Entry mode</label>
+      <div style="display:flex;border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;background:white">
+        <button id="mode-pct" onclick="setFMode('pct')" style="padding:6px 14px;font-size:13px;border:none;cursor:pointer;background:var(--blue);color:white;font-family:inherit;transition:all 0.15s">% first</button>
+        <button id="mode-g" onclick="setFMode('g')" style="padding:6px 14px;font-size:13px;border:none;cursor:pointer;background:white;color:var(--gray-400);font-family:inherit;transition:all 0.15s">g first</button>
+      </div></div>
+    </div>
+    <div class="fhdr-actions">
+      <div class="fld" style="margin-bottom:0">
+        <label>Load saved</label>
+        <select class="ni" id="load-formula-sel" style="width:100%" onchange="loadFormulaIntoBuilder(this.value)">
+          <option value="">— select formula —</option>
+        </select>
+      </div>
+      <button class="btn" onclick="newFormula()" title="Clear and start a new formula">New</button>
+      <button class="btn btn-primary" onclick="saveVer()">+ Save version</button>
+    </div>
+  </div>
+  <div id="pct-status" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:13px;color:var(--gray-400)">
+    <span>Total: <strong id="pct-total" style="color:var(--gray-900)">0%</strong></span>
+    <span id="pct-hint" style="font-size:12px"></span>
+    <span id="g-total-display" style="font-size:12px;color:var(--gray-400)"></span>
+  </div>
+  <div id="falerts" style="margin-bottom:12px"></div>
+  <div class="card">
+    <div class="tbl-wrap">
+    <table class="tbl" style="min-width:560px">
+      <thead><tr id="fhead">
+        <th style="width:26%">Ingredient</th>
+        <th style="width:8%">Role</th>
+        <th style="width:11%" id="fh-pct">%</th>
+        <th style="width:11%" id="fh-g">Amount (g)</th>
+        <th style="width:12%">Cost/g (Rp)</th>
+        <th style="width:18%">Visual %</th>
+        <th style="width:10%;text-align:right">Cost</th>
+        <th style="width:4%"></th>
+      </tr></thead>
+      <tbody id="fbody"></tbody>
+    </table>
+    </div>
+    <button class="btn-add" onclick="addFRow()">+ Add ingredient</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="mlbl">Total weight</div><div class="mval" id="mw">—</div><div class="msub">grams</div></div>
+    <div class="metric"><div class="mlbl">Total COGS</div><div class="mval" id="mc">—</div><div class="msub">Rp</div></div>
+    <div class="metric"><div class="mlbl">Cost per ml</div><div class="mval" id="mp">—</div><div class="msub">Rp/ml</div></div>
+    <div class="metric"><div class="mlbl">Ingredients</div><div class="mval" id="mn">—</div><div class="msub">materials</div></div>
+  </div>
+</div>
+
+<!-- COST -->
+<div id="panel-cost" class="panel">
+  <div style="background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <div style="font-size:12px;font-weight:500;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap">Formula</div>
+    <select class="ni" id="cost-formula-sel" style="flex:1;min-width:180px" onchange="loadFormulaForCost(this.value)">
+      <option value="">— use current formula builder —</option>
+    </select>
+    <div style="font-size:12px;color:var(--gray-400)" id="cost-formula-meta"></div>
+  </div>
+  <div class="slbl">Batch scaling</div>
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+    <div style="display:flex;align-items:center;gap:10px"><label style="font-size:13px;color:var(--gray-400);min-width:170px">Batch size</label><input type="text" inputmode="decimal" id="bsz" value="500" class="ni" style="width:80px" oninput="rcc()"><span style="font-size:13px;color:var(--gray-400)">ml</span></div>
+    <div style="display:flex;align-items:center;gap:10px"><label style="font-size:13px;color:var(--gray-400);min-width:170px">Fill per bottle</label><input type="text" inputmode="decimal" id="fvol" value="50" class="ni" style="width:80px" oninput="rcc()"><span style="font-size:13px;color:var(--gray-400)">ml</span></div>
+    <div style="display:flex;align-items:center;gap:10px"><label style="font-size:13px;color:var(--gray-400);min-width:170px">Bottle + packaging</label><input type="text" inputmode="decimal" id="bcost" value="15000" class="ni" style="width:100px" oninput="rcc()"><span style="font-size:13px;color:var(--gray-400)">Rp/unit</span></div>
+  </div>
+  <div style="display:flex;gap:32px;padding:16px 0;border-top:0.5px solid var(--border);border-bottom:0.5px solid var(--border);margin-bottom:20px">
+    <div><div class="mlbl">COGS / bottle</div><div style="font-size:20px;font-weight:500" id="cpb">—</div></div>
+    <div><div class="mlbl">Units in batch</div><div style="font-size:20px;font-weight:500" id="ub">—</div></div>
+    <div><div class="mlbl">Total batch cost</div><div style="font-size:20px;font-weight:500" id="tbc">—</div></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+    <span class="slbl" style="margin-bottom:0">Pricing scenarios</span>
+  </div>
+  <div class="pg" id="pgrid" style="margin-bottom:20px"></div>
+  <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+    <span class="slbl" style="margin-bottom:0">Custom target</span>
+    <span class="ii-icon" onclick="document.getElementById('ttm').classList.toggle('show')">i</span>
+  </div>
+  <div id="ttm" class="tip">
+    <div class="tip-title">Margin vs markup — what's the difference?</div>
+    <div class="tsm"><span>Margin (on revenue)</span><span>(Price − COGS) / Price</span></div>
+    <div class="tsm"><span>Markup (on cost)</span><span>(Price − COGS) / COGS</span></div>
+    <div class="tsm"><span>COGS Rp 20.000 → price Rp 80.000</span><span>75% margin · 300% markup · 4×</span></div>
+    <div class="tsm"><span>4× multiplier</span><span>= 75% margin = 300% markup</span></div>
+    <div class="tip-warn"><strong>This only covers raw material COGS — not your full business costs.</strong>Also account for: packaging design (5–10%), marketing (10–20%), platform fees (3–8%), shipping (Rp 10–25K/order), your time. Aim for at least 70% gross margin on COGS to remain profitable after overhead. Below 60% and you may look busy but not actually be profitable.</div>
+  </div>
+  <div style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:13px;color:var(--gray-400);min-width:80px">Margin %</span>
+      <input type="range" id="msl" min="10" max="85" value="75" step="1" style="flex:1" oninput="onSl('margin')">
+      <input type="text" inputmode="decimal" id="min" value="75" class="ni" style="width:52px;text-align:center" oninput="onIn('margin')">
+      <span style="font-size:13px;color:var(--gray-400)">%</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:13px;color:var(--gray-400);min-width:80px">Markup %</span>
+      <input type="range" id="mksl" min="25" max="700" value="300" step="1" style="flex:1" oninput="onSl('markup')">
+      <input type="text" inputmode="decimal" id="mkin" value="300" class="ni" style="width:52px;text-align:center" oninput="onIn('markup')">
+      <span style="font-size:13px;color:var(--gray-400)">%</span>
+    </div>
+  </div>
+  <div class="card" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="mlbl">Suggested retail price</div><div style="font-size:24px;font-weight:500;color:var(--blue)" id="sp">—</div></div>
+      <div style="text-align:right"><div class="mlbl">Gross profit / bottle</div><div style="font-size:16px;font-weight:500;color:var(--green)" id="gp">—</div></div>
+    </div>
+    <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);display:flex;gap:20px;font-size:12px;color:var(--gray-400)">
+      <span>Margin: <strong id="md" style="color:var(--gray-900)">—</strong></span>
+      <span>Markup: <strong id="mkd" style="color:var(--gray-900)">—</strong></span>
+      <span>Multiplier: <strong id="mld" style="color:var(--gray-900)">—</strong></span>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE -->
+<div id="panel-invoice" class="panel">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem">
+    <div>
+      <div class="slbl">Business info</div>
+      <div class="fld"><label>Brand name</label><input class="ni" id="bn" value="Aranya Fine Fragrance" style="width:100%" oninput="updInv()"></div>
+      <div class="tc">
+        <div class="fld"><label>Bank</label><input class="ni" id="bk" value="BCA" style="width:100%" oninput="updInv()"></div>
+        <div class="fld"><label>Account number</label><input class="ni" id="ba" placeholder="No. rekening" style="width:100%" oninput="updInv()"></div>
+      </div>
+      <div class="tc">
+        <div class="fld"><label>GoPay/OVO</label><input class="ni" id="ew" placeholder="+62..." style="width:100%" oninput="updInv()"></div>
+        <div class="fld"><label>WhatsApp</label><input class="ni" id="wa" placeholder="+62..." style="width:100%" oninput="updInv()"></div>
+      </div>
+      <div class="fld"><label>Instagram</label><input class="ni" id="ig" value="@aranyafragrance" style="width:100%" oninput="updInv()"></div>
+      <div class="fld"><label>Note to client</label><textarea class="ni" id="nt" rows="3" style="width:100%" placeholder="Terima kasih..." oninput="updInv()"></textarea></div>
+      <div class="tc">
+        <div class="fld"><label>Signature name</label><input class="ni" id="sig-name" value="Aryo Wiryawan" style="width:100%" oninput="updSig()"></div>
+        <div class="fld"><label>Designation</label><input class="ni" id="sig-desig" value="Founder, Aranya Fine Fragrance" style="width:100%" oninput="updSig()"></div>
+      </div>
+    </div>
+    <div>
+      <div class="slbl">Invoice details</div>
+      <div class="fld"><label>Invoice number</label><input class="ni" id="inum" value="INV-001" style="width:100%" oninput="document.getElementById('invn').textContent=this.value;updIT()"></div>
+      <div class="fld"><label>Client name</label><input class="ni" id="cn" placeholder="Client name" style="width:100%" oninput="updInv()"></div>
+      <div class="fld"><label>Client detail</label><input class="ni" id="cd" placeholder="Company / address" style="width:100%" oninput="updInv()"></div>
+      <div class="fld"><label>Product</label><input class="ni" id="ip" style="width:100%" oninput="updIT()"></div>
+      <div class="tc">
+        <div class="fld"><label>Quantity</label><input class="ni" type="text" inputmode="decimal" id="iq" value="1" style="width:100%" oninput="updIT()"></div>
+        <div class="fld"><label>Unit price (Rp)</label><input class="ni" type="text" inputmode="decimal" id="ipr" style="width:100%" oninput="manPr=true;updIT()"></div>
+      </div>
+      <div class="fld">
+        <label style="display:flex;align-items:center;gap:4px">Tax rate <span class="ii-icon" onclick="document.getElementById('ttp').classList.toggle('show')">i</span></label>
+        <div id="ttp" class="tip" style="margin-bottom:8px">
+          <div class="tip-title">Tax rate by country</div>
+          <div class="tsm"><span>Indonesia PPN</span><span>11%</span></div>
+          <div class="tsm"><span>Singapore GST</span><span>9%</span></div>
+          <div class="tsm"><span>Australia GST</span><span>10%</span></div>
+          <div class="tsm"><span>EU VAT (varies)</span><span>17–27%</span></div>
+          <div class="tsm"><span>Tax-free (export/B2B)</span><span>0%</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input class="ni" type="text" inputmode="decimal" id="ppn" value="11" style="width:56px;text-align:center" oninput="updIT()">
+          <span style="font-size:13px;color:var(--gray-400)">%</span>
+          <span style="font-size:12px;color:var(--gray-400)" id="ppnp">= PPN 11%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="inv-card" id="invp">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem">
+      <div>
+        <div style="font-size:20px;font-weight:500;letter-spacing:0.08em;color:var(--blue-dark)" id="pbn">ARANYA FINE FRAGRANCE</div>
+        <div style="font-size:12px;color:var(--gray-400);margin-top:2px" id="pig">@aranyafragrance</div>
+      </div>
+      <div style="text-align:right;font-size:12px;color:var(--gray-400);line-height:1.9">
+        <span style="font-size:14px;font-weight:500;color:var(--gray-900)">Invoice #<span id="invn">INV-001</span></span><br>
+        Date: <span style="font-weight:500;color:var(--gray-900)" id="idate"></span><br>
+        Due: <span style="font-weight:500;color:var(--gray-900)" id="idue"></span>
+      </div>
+    </div>
+    <hr style="border:none;border-top:0.5px solid var(--border);margin-bottom:1rem">
+    <div style="font-size:13px;margin-bottom:1rem">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-400);margin-bottom:4px">Bill to</div>
+      <div style="font-weight:500" id="pcn">—</div>
+      <div style="color:var(--gray-400);margin-top:2px" id="pcd"></div>
+    </div>
+    <hr style="border:none;border-top:0.5px solid var(--border);margin-bottom:1rem">
+    <table class="it"><thead><tr><th style="width:40%">Item</th><th>Qty</th><th>Unit</th><th>Unit price</th><th>Total</th></tr></thead><tbody id="itb"></tbody></table>
+    <div style="display:flex;justify-content:flex-end">
+      <div class="tw">
+        <div class="tr"><span>Subtotal</span><span id="isub">—</span></div>
+        <div class="tr" id="taxrow"><span id="taxlbl">PPN 11%</span><span id="itax">—</span></div>
+        <div class="tr grand"><span>Total</span><span id="itot">—</span></div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;padding-top:1rem;border-top:0.5px solid var(--border);font-size:12px;color:var(--gray-400);line-height:1.8" id="pft"></div>
+    <div style="margin-top:2rem;display:flex;justify-content:flex-end">
+      <div style="text-align:center;min-width:180px">
+        <div style="height:48px;border-bottom:0.5px solid var(--gray-900);margin-bottom:6px"></div>
+        <div style="font-size:13px;font-weight:500;color:var(--gray-900)" id="sig-name-display">Aryo Wiryawan</div>
+        <div style="font-size:11px;color:var(--gray-400)" id="sig-desig-display">Founder, Aranya Fine Fragrance</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:1rem">
+    <button class="btn" onclick="saveInv()">Save invoice</button>
+    <button class="btn btn-primary" onclick="expPDF()">Export PDF</button>
+  </div>
+</div>
+
+<!-- VERSIONS -->
+<div id="panel-versions" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div class="slbl" style="margin-bottom:0">Saved versions</div>
+    <button class="btn btn-primary btn-sm" onclick="saveVer()">+ Save current</button>
+  </div>
+  <div id="vlist"><div class="emp">No saved versions yet.</div></div>
+</div>
+
+<!-- REFERENCE -->
+<div id="panel-reference" class="panel">
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+    <div style="flex:1">
+      <input type="text" class="ni" id="ref-search" placeholder="Search ingredient name..." style="width:100%;max-width:360px" oninput="renderRef()">
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="ref-filters">
+      <button class="ref-filter-btn active" data-filter="all" onclick="setRefFilter('all',this)">All</button>
+      <button class="ref-filter-btn" data-filter="ifra" onclick="setRefFilter('ifra',this)">IFRA restricted</button>
+      <button class="ref-filter-btn" data-filter="banned" onclick="setRefFilter('banned',this)">Banned</button>
+      <button class="ref-filter-btn" data-filter="Top" onclick="setRefFilter('Top',this)">Top notes</button>
+      <button class="ref-filter-btn" data-filter="Mid" onclick="setRefFilter('Mid',this)">Mid notes</button>
+      <button class="ref-filter-btn" data-filter="Base" onclick="setRefFilter('Base',this)">Base notes</button>
+    </div>
+  </div>
+  <div style="background:var(--amber-light);border:0.5px solid var(--amber);border-radius:var(--radius-lg);padding:12px 16px;margin-bottom:16px;font-size:12px;color:#854F0B;line-height:1.6">
+    <strong>IFRA Category 4 limits apply to fine fragrance (leave-on skin products).</strong> Limits shown are maximum % of the ingredient in the final formula. Always verify against the latest IFRA standard at ifrafragrance.org — limits are updated periodically. This reference is for guidance only.
+  </div>
+  <div id="ref-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px"></div>
+</div>
+
+</main>
+
+<!-- SUPPLIER MODAL -->
+<div id="supmod" class="lov">
+  <div class="lo">
+    <div class="loh" id="smtitle">Add supplier</div>
+    <input type="hidden" id="smid">
+    <div class="tc">
+      <div class="fld" style="grid-column:1/-1"><label>Supplier name *</label><input class="ni" id="smn" style="width:100%" placeholder="e.g. Karanganyar Distillery"></div>
+      <div class="fld"><label>Contact person</label><input class="ni" id="smc" style="width:100%"></div>
+      <div class="fld"><label>Phone / WhatsApp</label><input class="ni" id="smph" style="width:100%"></div>
+      <div class="fld"><label>Email</label><input class="ni" id="sme" style="width:100%"></div>
+      <div class="fld"><label>City</label><input class="ni" id="smcy" style="width:100%"></div>
+      <div class="fld"><label>Country</label><input class="ni" id="smco" value="Indonesia" style="width:100%"></div>
+      <div class="fld" style="grid-column:1/-1"><label>Notes</label><textarea class="ni" id="smnt" rows="2" style="width:100%" placeholder="Min. order, lead time, speciality..."></textarea></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px">
+      <button class="btn" onclick="closeSupMod()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSup()">Save supplier</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+const SB_URL='https://ncrkzzhzruxanlsuszvb.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jcmt6emh6cnV4YW5sc3VzenZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODE1MDUsImV4cCI6MjA4OTM1NzUwNX0.-tWOhIvogLeaosztMBOBwg-UThiMz1Ga8S4ImZl1XyI';
+const WID='a1b2c3d4-0000-0000-0000-000000000002';
+const CATS=['Essential oil','Fragrance oil','Aroma chemical','Ready made fragrance','Top note','Heart note','Base note','Synthetic','Diluent','Solvent','Fixative','Other'];
+const ROLES=['—','Top','Mid','Base','Bridge','Musk','Accord'];
+
+// PERFUMERY REFERENCE DATABASE
+// ifra: IFRA Cat 4 (fine fragrance leave-on) max %, null = no restriction, 0 = banned
+// usage: [min%, max%] typical working range
+// odor: short descriptor
+// volatility: Top / Mid / Base (character-based classification)
+// bp: boiling point °C — objective chemical volatility (lower = more volatile = faster to evaporate)
+// tenacity: 1–10 skin substantivity (1=fleeting <30min, 5=moderate 2-4hr, 10=days on skin)
+// threshold: odor detection threshold in ppb (lower = more powerful, detectable at lower concentration)
+// notes: practical formulation advice
+// Sources: supplier TDS (Givaudan, IFF, Symrise, Firmenich), Arctander, IFRA 51st Amendment, published literature
+const REF={
+  // ─── MUSKS ────────────────────────────────────────────────────────────────
+  'Ambrette Seed Absolute':   {ifra:0.07,  usage:[0.1,1],    odor:'Musky, floral, fatty, slightly fruity',      volatility:'Base', bp:null, tenacity:8, threshold:0.1,  notes:'Natural musk substitute, IFRA restricted. Very powerful at trace levels.'},
+  'Ambroxan':                  {ifra:null,  usage:[0.5,3],    odor:'Ambergris, woody, skin-like, warm',           volatility:'Base', bp:330,  tenacity:9, threshold:0.02, notes:'Fixative and diffuser. Amplifies other ingredients. Dose carefully — can dominate.'},
+  'Ambrettolide':              {ifra:null,  usage:[0.2,2],    odor:'Musky, clean, slightly fruity',               volatility:'Base', bp:335,  tenacity:9, threshold:0.5,  notes:'Macrocyclic musk. Long-lasting, very natural feel on skin.'},
+  'Cashmeran':                 {ifra:null,  usage:[1,5],      odor:'Warm, woody, spicy, slightly fruity musk',    volatility:'Base', bp:285,  tenacity:7, threshold:5,    notes:'Versatile base note. Blends well with florals and woods. Good diffusion for a base.'},
+  'Civetone':                  {ifra:null,  usage:[0.1,0.5],  odor:'Animalic, musky, fatty',                      volatility:'Base', bp:338,  tenacity:9, threshold:0.3,  notes:'Macrocyclic musk. Animalic at high doses, skin-like at trace.'},
+  'Cosmone':                   {ifra:null,  usage:[0.5,3],    odor:'Clean, powdery musk, velvety',                volatility:'Base', bp:318,  tenacity:9, threshold:1,    notes:'Elegant clean musk. Good for soft skin-scent effects.'},
+  'Exaltolide':                {ifra:null,  usage:[0.5,3],    odor:'Clean, powdery, slightly sweet musk',         volatility:'Base', bp:312,  tenacity:8, threshold:2,    notes:'Classic lactone musk. Feminine, clean, powdery character.'},
+  'Galaxolide':                {ifra:null,  usage:[2,10],     odor:'Clean, musky, woody, slightly floral',        volatility:'Base', bp:305,  tenacity:7, threshold:10,   notes:'Very common polycyclic musk. Heavy IFRA scrutiny in progress.'},
+  'Habanolide':                {ifra:null,  usage:[0.5,3],    odor:'Clean, musky, slightly floral',               volatility:'Base', bp:328,  tenacity:9, threshold:1,    notes:'Macrocyclic musk. Smooth and natural character on skin.'},
+  'Helvetolide':               {ifra:null,  usage:[1,5],      odor:'Fruity, musky, clean',                        volatility:'Base', bp:320,  tenacity:8, threshold:3,    notes:'Soft musk with a slightly peachy facet. Good with florals.'},
+  'Iso E Super':               {ifra:null,  usage:[2,15],     odor:'Woody, cedarwood, velvet, slightly spicy',    volatility:'Mid',  bp:266,  tenacity:6, threshold:0.5,  notes:'Amplifier — boosts other ingredients. Can cause temporary anosmia at high doses.'},
+  'Musk Ambrette':             {ifra:0,     usage:[0,0],      odor:'Musky',                                       volatility:'Base', bp:null, tenacity:0, threshold:null, notes:'BANNED by IFRA — phototoxic and sensitizing. Never use.'},
+  'Musk Tibetene':             {ifra:0,     usage:[0,0],      odor:'Musky',                                       volatility:'Base', bp:null, tenacity:0, threshold:null, notes:'BANNED by IFRA. Never use.'},
+  'Muscone':                   {ifra:null,  usage:[0.1,0.5],  odor:'Animalic, natural musk, warm, diffusive',     volatility:'Base', bp:328,  tenacity:10,threshold:0.001,notes:'Natural macrocyclic musk from musk deer. Extremely powerful — ppb detection. Very expensive.'},
+  'Tonalide':                  {ifra:null,  usage:[2,8],      odor:'Clean, musky, slightly floral',               volatility:'Base', bp:302,  tenacity:7, threshold:8,    notes:'Polycyclic musk. Common in detergent-style accords.'},
+  'Velvione':                  {ifra:null,  usage:[0.5,3],    odor:'Clean, velvety, powdery musk',                volatility:'Base', bp:325,  tenacity:9, threshold:1,    notes:'Elegant macrocyclic. Skin-like, powdery.'},
+
+  // ─── ALDEHYDES ────────────────────────────────────────────────────────────
+  'Aldehyde C-11 Undecylenic': {ifra:null,  usage:[0.1,1],    odor:'Waxy, fatty, soapy, citrus peel',            volatility:'Top',  bp:192,  tenacity:3, threshold:0.01, notes:'Classic Chanel No.5 aldehyde character. Very powerful — use sparingly.'},
+  'Aldehyde C-12 MNA':         {ifra:null,  usage:[0.05,0.5], odor:'Floral, fresh, powdery',                     volatility:'Top',  bp:185,  tenacity:3, threshold:0.005,notes:'Extremely powerful — trace amounts only.'},
+  'Aldehyde C-14 Peach':       {ifra:null,  usage:[0.1,1],    odor:'Peach, creamy, lactonic',                    volatility:'Mid',  bp:212,  tenacity:4, threshold:0.05, notes:'Classic peach/apricot note. Good in fruity and floral accords.'},
+
+  // ─── AROMA CHEMICALS — FLORALS ────────────────────────────────────────────
+  'Benzyl Acetate':            {ifra:null,  usage:[1,10],     odor:'Jasmine, fruity, sweet floral',              volatility:'Top',  bp:214,  tenacity:2, threshold:60,   notes:'Natural jasmine component. Good diffusion but low tenacity — needs anchoring.'},
+  'Calone 1951':               {ifra:null,  usage:[0.1,0.5],  odor:'Watermelon, marine, fresh',                  volatility:'Top',  bp:210,  tenacity:2, threshold:0.01, notes:'Extremely powerful marine note. Very low usage rate — can overwhelm a formula.'},
+  'Dihydromyrcenol':           {ifra:null,  usage:[2,15],     odor:'Fresh, citrus, piney, clean',                volatility:'Top',  bp:206,  tenacity:2, threshold:50,   notes:'Key fresh masculine note. Staple of fougères. Low tenacity — needs base support.'},
+  'Ethylene Brassylate':       {ifra:null,  usage:[0.5,5],    odor:'Musky, sweet, clean',                        volatility:'Base', bp:354,  tenacity:10,threshold:0.1,  notes:'Macrocyclic musk ester. Excellent fixative. One of the most substantive musks.'},
+  'Hedione':                   {ifra:null,  usage:[5,25],     odor:'Jasmine, diffusive, transparent, floral',    volatility:'Mid',  bp:294,  tenacity:5, threshold:5,    notes:'Powerful diffuser. Creates transparency and radiance. Can use generously.'},
+  'Hedione HC':                {ifra:null,  usage:[3,15],     odor:'Jasmine, very diffusive, clean floral',      volatility:'Mid',  bp:294,  tenacity:5, threshold:1,    notes:'High cis isomer — 5-10× more powerful than standard Hedione.'},
+  'Indole':                    {ifra:null,  usage:[0.02,0.5], odor:'Animalic, fecal, floral at low dose',        volatility:'Mid',  bp:254,  tenacity:5, threshold:0.5,  notes:'Animalic depth to florals at trace. Character flips from floral to fecal with dose.'},
+  'Lilial':                    {ifra:0.69,  usage:[0.1,1],    odor:'Lily of the valley, muguet, fresh',          volatility:'Mid',  bp:264,  tenacity:4, threshold:1,    notes:'IFRA restricted. Allergen concerns — verify against latest IFRA standard.'},
+  'Linalool':                  {ifra:null,  usage:[1,10],     odor:'Floral, lavender, fresh, slightly spicy',    volatility:'Top',  bp:198,  tenacity:3, threshold:25,   notes:'Common in many naturals. EU allergen declaration needed above threshold.'},
+  'Lyral':                     {ifra:0.02,  usage:[0,0.02],   odor:'Muguet, fresh, clean',                       volatility:'Mid',  bp:270,  tenacity:5, threshold:0.5,  notes:'Severely IFRA restricted due to sensitization. Effectively avoid.'},
+  'Methyl Laitone':            {ifra:null,  usage:[0.5,5],    odor:'Creamy, milky, coconut, sweet',              volatility:'Mid',  bp:248,  tenacity:6, threshold:0.5,  notes:'Used in gourmand and lactonic accords. Good tenacity for a mid note.'},
+  'Nectaryl':                  {ifra:null,  usage:[0.5,5],    odor:'Peach, floral, honey, radiant',              volatility:'Mid',  bp:260,  tenacity:5, threshold:2,    notes:'Radiant peach-floral. Good longevity for a fruity material.'},
+  'Rose Oxide':                {ifra:null,  usage:[0.02,0.2], odor:'Rose, geranium, lychee, metallic',           volatility:'Top',  bp:175,  tenacity:2, threshold:0.001,notes:'Extremely powerful — trace only. One of the lowest odor thresholds known. Lychee and metallic rose.'},
+  'Vertenex':                  {ifra:null,  usage:[1,8],      odor:'Woody, green, slightly earthy, galbanum',    volatility:'Mid',  bp:258,  tenacity:5, threshold:10,   notes:'Galbanum-like green woody note. Bridges green and woody accords.'},
+
+  // ─── AROMA CHEMICALS — WOODY ──────────────────────────────────────────────
+  'Bacdanol':                  {ifra:null,  usage:[0.5,5],    odor:'Sandalwood, creamy, milky',                  volatility:'Base', bp:296,  tenacity:8, threshold:1,    notes:'Excellent sandalwood substitute. Good creamy depth.'},
+  'Cetalox':                   {ifra:null,  usage:[0.5,3],    odor:'Ambergris, woody, clean',                    volatility:'Base', bp:324,  tenacity:9, threshold:0.05, notes:'Similar to Ambroxan. Good fixative and skin-like quality.'},
+  'Clearwood':                 {ifra:null,  usage:[1,8],      odor:'Woody, clean, slightly patchouli-like',      volatility:'Base', bp:290,  tenacity:8, threshold:5,    notes:'Clean woody base note. Good with musks and orientals.'},
+  'Ebanol':                    {ifra:null,  usage:[0.5,5],    odor:'Sandalwood, cedar, woody, clean',            volatility:'Base', bp:290,  tenacity:8, threshold:2,    notes:'One of the best sandalwood substitutes. Long-lasting.'},
+  'Javanol':                   {ifra:null,  usage:[0.5,5],    odor:'Sandalwood, creamy, rosy, milky',            volatility:'Base', bp:300,  tenacity:8, threshold:1,    notes:'Very close to Mysore sandalwood character. Highly substantive.'},
+  'Karanal':                   {ifra:null,  usage:[0.5,5],    odor:'Cedar, woody, slightly floral',              volatility:'Base', bp:295,  tenacity:8, threshold:3,    notes:'Good cedar substitute with excellent longevity.'},
+  'Norlimbanol':               {ifra:null,  usage:[0.1,1],    odor:'Woody, earthy, vetiver-like, smoky',         volatility:'Base', bp:288,  tenacity:8, threshold:0.1,  notes:'Earthy woody base. Supports vetiver accords. Powerful.'},
+  'Okoumal':                   {ifra:null,  usage:[0.5,5],    odor:'Woody, creamy, slightly sweet',              volatility:'Base', bp:285,  tenacity:7, threshold:5,    notes:'Amyris-like woody note. Good moderate tenacity.'},
+  'Orbitone':                  {ifra:null,  usage:[0.5,5],    odor:'Sandalwood, iris, woody, powdery',           volatility:'Base', bp:298,  tenacity:8, threshold:2,    notes:'Powdery sandalwood nuance. Excellent with iris accords.'},
+  'Sylvamber':                 {ifra:null,  usage:[1,8],      odor:'Amber, woody, slightly sweet, warm',         volatility:'Base', bp:302,  tenacity:8, threshold:5,    notes:'Amber base note. Smooth and warm. Good longevity.'},
+  'Timberol':                  {ifra:null,  usage:[0.5,5],    odor:'Sandalwood, cedar, woody',                   volatility:'Base', bp:292,  tenacity:8, threshold:3,    notes:'Versatile woody base. Reliable longevity.'},
+
+  // ─── AROMA CHEMICALS — FRESH / CITRUS ────────────────────────────────────
+  'Bergamot EO':               {ifra:0.4,   usage:[1,5],      odor:'Bergamot, citrus, floral, slightly spicy',  volatility:'Top',  bp:183,  tenacity:1, threshold:20,   notes:'IFRA restricted (phototoxic). Use bergapten-free grade. Very low tenacity — evaporates in 30 min.'},
+  'Citronellol':               {ifra:null,  usage:[1,10],     odor:'Rose, citronella, fresh',                    volatility:'Top',  bp:225,  tenacity:3, threshold:40,   notes:'Rose and citrus character. EU allergen above threshold.'},
+  'Geraniol':                  {ifra:null,  usage:[1,10],     odor:'Rose, geranium, sweet',                      volatility:'Top',  bp:229,  tenacity:3, threshold:75,   notes:'Natural rose component. EU allergen above threshold.'},
+  'Lemon EO':                  {ifra:2.0,   usage:[1,5],      odor:'Lemon, citrus, fresh, clean',               volatility:'Top',  bp:176,  tenacity:1, threshold:50,   notes:'IFRA restricted. Very low tenacity — typically gone in 20-30 min. Anchor with fixatives.'},
+  'Lime EO':                   {ifra:0.7,   usage:[1,5],      odor:'Lime, citrus, fresh, green',                volatility:'Top',  bp:176,  tenacity:1, threshold:50,   notes:'IFRA restricted. Distilled lime more tenacious than expressed.'},
+  'Litsea Cubeba EO':          {ifra:0.8,   usage:[0.5,3],    odor:'Lemon, fresh, slightly floral',             volatility:'Top',  bp:180,  tenacity:2, threshold:10,   notes:'IFRA restricted. Better tenacity than lemon EO. Good fresh citrus longevity.'},
+  'Orange Sweet EO':           {ifra:null,  usage:[2,10],     odor:'Sweet orange, fresh, juicy',                volatility:'Top',  bp:175,  tenacity:1, threshold:100,  notes:'Very low tenacity. Pair with Hedione or orange flower materials for longevity.'},
+
+  // ─── AROMA CHEMICALS — SPICE / ORIENTAL ──────────────────────────────────
+  'Amyl Cinnamal':             {ifra:0.3,   usage:[0.1,1],    odor:'Floral, jasmine, muguet, sweet',            volatility:'Mid',  bp:285,  tenacity:5, threshold:0.1,  notes:'IFRA restricted sensitizer. Common EU allergen.'},
+  'Benzyl Benzoate':           {ifra:null,  usage:[1,15],     odor:'Faint balsamic, sweet, slightly floral',    volatility:'Base', bp:324,  tenacity:8, threshold:500,  notes:'Also a carrier/fixative. Naturally in ylang ylang. EU allergen above threshold.'},
+  'Benzyl Cinnamate':          {ifra:null,  usage:[0.5,5],    odor:'Balsamic, sweet, floral',                   volatility:'Base', bp:350,  tenacity:9, threshold:100,  notes:'Fixative with mild balsamic odor. Very good longevity.'},
+  'Cinnamaldehyde':            {ifra:0.05,  usage:[0.01,0.1], odor:'Cinnamon, spicy, sweet',                    volatility:'Top',  bp:248,  tenacity:3, threshold:1,    notes:'IFRA severely restricted. EU allergen. Powerful — trace only.'},
+  'Eugenol':                   {ifra:0.5,   usage:[0.1,1],    odor:'Clove, spicy, warm, woody',                 volatility:'Mid',  bp:254,  tenacity:5, threshold:6,    notes:'IFRA restricted. EU allergen. Natural in clove, rose.'},
+  'Isoeugenol':                {ifra:0.02,  usage:[0,0.02],   odor:'Clove, carnation, spicy',                   volatility:'Mid',  bp:266,  tenacity:5, threshold:1,    notes:'Severely IFRA restricted — major sensitizer. Effectively avoid.'},
+  'Methyl Ionone':             {ifra:null,  usage:[1,10],     odor:'Violet, iris, woody, powdery',              volatility:'Mid',  bp:272,  tenacity:7, threshold:0.5,  notes:'Powerful violet/iris note. Good tenacity for a mid note.'},
+  'Vanillin':                  {ifra:null,  usage:[0.5,5],    odor:'Vanilla, sweet, balsamic, warm',            volatility:'Base', bp:285,  tenacity:7, threshold:200,  notes:'Synthetic vanilla. Discolors formulas (yellowing). Good fixative.'},
+  'Ethyl Vanillin':            {ifra:null,  usage:[0.5,3],    odor:'Vanilla, sweet, creamy, intense',           volatility:'Base', bp:295,  tenacity:7, threshold:20,   notes:'3× stronger than vanillin. Similar tenacity but more intense.'},
+
+  // ─── NATURAL ESSENTIAL OILS ───────────────────────────────────────────────
+  'Agarwood EO':               {ifra:null,  usage:[0.5,5],    odor:'Oud, woody, animalic, incense, smoky',      volatility:'Base', bp:null, tenacity:9, threshold:0.1,  notes:'Extremely expensive. Often adulterated. Very powerful base note. Very high tenacity.'},
+  'Amyris EO':                 {ifra:null,  usage:[2,10],     odor:'Woody, slightly milky, clean',              volatility:'Base', bp:290,  tenacity:7, threshold:100,  notes:'Inexpensive sandalwood substitute. Good fixative. Moderate-good tenacity.'},
+  'Benzoin Absolute':          {ifra:null,  usage:[0.5,5],    odor:'Vanilla, balsamic, sweet, warm',            volatility:'Base', bp:320,  tenacity:9, threshold:50,   notes:'Resinoid base note. Excellent fixative. Can cause sensitization in some.'},
+  'Black Pepper EO':           {ifra:null,  usage:[0.5,3],    odor:'Spicy, peppery, dry, woody',                volatility:'Top',  bp:165,  tenacity:2, threshold:20,   notes:'Excellent spice top note. Low tenacity — evaporates within an hour.'},
+  'Cardamom EO':               {ifra:null,  usage:[0.5,3],    odor:'Spicy, fresh, sweet, herbal, eucalyptus',  volatility:'Top',  bp:176,  tenacity:2, threshold:15,   notes:'Versatile spice top note. Works in fresh and oriental accords. Low tenacity.'},
+  'Cedarwood Atlas EO':        {ifra:null,  usage:[2,10],     odor:'Cedar, woody, slightly sweet, warm',        volatility:'Base', bp:262,  tenacity:7, threshold:100,  notes:'Good base note and fixative. Moderate-good tenacity.'},
+  'Cedarwood Virginia EO':     {ifra:null,  usage:[2,10],     odor:'Pencil shavings, woody, dry, crisp',        volatility:'Base', bp:258,  tenacity:7, threshold:200,  notes:'Drier, sharper cedar. Similar tenacity to Atlas.'},
+  'Clary Sage EO':             {ifra:null,  usage:[1,5],      odor:'Herbaceous, slightly floral, musky, warm',  volatility:'Mid',  bp:218,  tenacity:4, threshold:30,   notes:'Herbal mid note. Useful in masculine and natural accords.'},
+  'Frankincense EO':           {ifra:null,  usage:[1,5],      odor:'Incense, resinous, slightly citrus, balsamic',volatility:'Mid', bp:220,  tenacity:5, threshold:10,  notes:'Excellent in oriental and incense accords. Good moderate tenacity.'},
+  'Geranium Bourbon EO':       {ifra:null,  usage:[0.5,5],    odor:'Rose, green, minty, fresh floral',          volatility:'Mid',  bp:222,  tenacity:4, threshold:20,   notes:'Rosy-green mid note. Bridges florals and greens.'},
+  'Ginger EO':                 {ifra:null,  usage:[0.5,3],    odor:'Spicy, fresh, slightly citrus, warm',       volatility:'Top',  bp:185,  tenacity:2, threshold:15,   notes:'Good spice top note. CO2 extract has fuller, more tenacious character than distilled.'},
+  'Jasmine Absolute':          {ifra:null,  usage:[0.5,3],    odor:'Jasmine, floral, indolic, rich, honeyed',   volatility:'Mid',  bp:260,  tenacity:6, threshold:1,    notes:'Very expensive natural. Indolic character adds depth and complexity.'},
+  'Labdanum Absolute':         {ifra:null,  usage:[0.5,5],    odor:'Amber, warm, resinous, animalic, sweet',    volatility:'Base', bp:310,  tenacity:9, threshold:10,   notes:'Key amber/oriental base. Excellent fixative. Very high tenacity.'},
+  'Lavandin EO':               {ifra:null,  usage:[2,10],     odor:'Lavender, fresh, slightly camphoraceous',   volatility:'Top',  bp:198,  tenacity:2, threshold:40,   notes:'More pungent than true lavender. Fougère staple. Low-moderate tenacity.'},
+  'Lavender EO':               {ifra:null,  usage:[1,8],      odor:'Lavender, fresh, floral, herbal',           volatility:'Top',  bp:198,  tenacity:2, threshold:30,   notes:'Very versatile. Works in almost any accord. Low tenacity — evaporates in 1-2 hrs.'},
+  'Lemon EO (Bergapten-free)': {ifra:2.0,   usage:[2,8],      odor:'Lemon, citrus, fresh, clean',               volatility:'Top',  bp:176,  tenacity:1, threshold:50,   notes:'Preferred for leave-on products. Still IFRA limited.'},
+  'Neroli EO':                 {ifra:null,  usage:[0.5,3],    odor:'Orange blossom, fresh, slightly indolic',   volatility:'Top',  bp:215,  tenacity:3, threshold:5,    notes:'Very expensive. Better tenacity than citrus EOs due to indolics. Petitgrain is a good bridge.'},
+  'Oud EO':                    {ifra:null,  usage:[0.2,3],    odor:'Oud, woody, animalic, incense, deep',       volatility:'Base', bp:null, tenacity:10,threshold:0.05, notes:'Extremely expensive and variable. Quality varies enormously. Exceptional tenacity.'},
+  'Patchouli EO':              {ifra:null,  usage:[1,8],      odor:'Earthy, woody, dark, slightly sweet, mossy',volatility:'Base', bp:280,  tenacity:9, threshold:10,   notes:'Key oriental base. Aged patchouli is rounder. Excellent tenacity.'},
+  'Petitgrain EO':             {ifra:null,  usage:[1,8],      odor:'Woody, green, fresh, slightly floral',      volatility:'Top',  bp:210,  tenacity:3, threshold:20,   notes:'More affordable bridge to neroli. Better tenacity than citrus EOs.'},
+  'Rose Absolute':             {ifra:null,  usage:[0.5,3],    odor:'Rose, rich, honeyed, slightly spicy',       volatility:'Mid',  bp:250,  tenacity:6, threshold:1,    notes:'Very expensive. Rosa damascena vs centifolia have different characters. Good tenacity.'},
+  'Rose Otto EO':              {ifra:null,  usage:[0.2,1],    odor:'Rose, fresh, honeyed, waxy, clean',         volatility:'Mid',  bp:230,  tenacity:5, threshold:0.5,  notes:'Most expensive natural. Exquisite longevity. Use sparingly.'},
+  'Sandalwood Mysore EO':      {ifra:null,  usage:[2,10],     odor:'Sandalwood, creamy, milky, woody, smooth',  volatility:'Base', bp:298,  tenacity:9, threshold:5,    notes:'Best quality sandalwood. Endangered — use sustainably. Outstanding tenacity.'},
+  'Sandalwood Australian EO':  {ifra:null,  usage:[2,10],     odor:'Sandalwood, woody, slightly different from Mysore',volatility:'Base',bp:295,tenacity:9,threshold:8, notes:'More sustainable alternative to Mysore. Very good tenacity.'},
+  'Spikenard EO':              {ifra:null,  usage:[0.5,3],    odor:'Earthy, woody, musky, animalic, herbal',    volatility:'Base', bp:270,  tenacity:7, threshold:20,   notes:'Unusual earthy base. Used in oud and oriental accords.'},
+  'Tonka Bean Absolute':       {ifra:0.6,   usage:[0.2,2],    odor:'Coumarin, vanilla, almond, sweet hay',      volatility:'Base', bp:290,  tenacity:8, threshold:10,   notes:'IFRA restricted (coumarin). Key oriental and fougère base. Good tenacity.'},
+  'Vetiver EO':                {ifra:null,  usage:[1,8],      odor:'Earthy, smoky, woody, dry, rootsy',         volatility:'Base', bp:290,  tenacity:9, threshold:5,    notes:'Essential base note. Haitian vs Java vs Indian have different characters. Excellent tenacity.'},
+  'Ylang Ylang EO':            {ifra:null,  usage:[0.5,3],    odor:'Floral, sweet, fruity, heady, slightly rubber',volatility:'Mid', bp:248,  tenacity:5, threshold:0.5, notes:'Powerful — use carefully. Extra grade higher quality than complete. Good tenacity.'},
+
+  // ─── SOLVENTS / CARRIERS ──────────────────────────────────────────────────
+  'DPG':                       {ifra:null,  usage:[10,80],    odor:'Odorless, slightly sweet',                  volatility:'Base', bp:231,  tenacity:5, threshold:null, notes:'Dipropylene Glycol — standard carrier/diluent. Extends tenacity of perfume materials.'},
+  'IPM':                       {ifra:null,  usage:[5,50],     odor:'Odorless, slightly oily',                   volatility:'Base', bp:315,  tenacity:7, threshold:null, notes:'Isopropyl Myristate — emollient carrier. Skin feel enhancer. Good for oil perfumes.'},
+  'Ethanol (Perfumers)':       {ifra:null,  usage:[70,90],    odor:'Alcohol, clean',                            volatility:'Top',  bp:78,   tenacity:1, threshold:null, notes:'Standard carrier for EDP/EDT. Evaporates in minutes carrying top notes with it.'},
+  'Fractionated Coconut Oil':  {ifra:null,  usage:[10,80],    odor:'Odorless, oily',                            volatility:'Base', bp:null, tenacity:8, threshold:null, notes:'Good skin feel. Used in oil perfumes. Slow evaporation extends longevity of all notes.'},
+};
+
+function getRef(name){
+  if(!name)return null;
+  const n=name.trim();
+  if(REF[n])return REF[n];
+  const nl=n.toLowerCase();
+  const key=Object.keys(REF).find(k=>k.toLowerCase()===nl||nl.includes(k.toLowerCase())||k.toLowerCase().includes(nl));
+  return key?REF[key]:null;
+}
+
+function ifraStatus(name,pct){
+  const r=getRef(name);
+  if(!r||r.ifra===null)return null;
+  if(r.ifra===0)return{type:'banned',msg:`BANNED by IFRA — do not use in any product`};
+  if(pct>r.ifra)return{type:'over',msg:`Exceeds IFRA Cat.4 limit of ${r.ifra}% (current: ${pct.toFixed(3)}%)`};
+  if(pct>r.ifra*0.8)return{type:'warn',msg:`Approaching IFRA Cat.4 limit of ${r.ifra}% (current: ${pct.toFixed(3)}%)`};
+  return{type:'ok',msg:`Within IFRA Cat.4 limit of ${r.ifra}%`};
+}
+
+const H={'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Accept':'application/json','Prefer':'return=representation'};
+
+async function dbGet(table,select,filters=[]){
+  let url=SB_URL+'/rest/v1/'+table+'?select='+encodeURIComponent(select);
+  filters.forEach(f=>url+='&'+f);
+  const r=await fetch(url,{method:'GET',mode:'cors',headers:H});
+  if(!r.ok){const t=await r.text();throw new Error(`${table} GET ${r.status}: ${t}`);}
+  return r.json();
+}
+async function dbGetOne(table,select,filters=[]){
+  const arr=await dbGet(table,select,filters);
+  return arr&&arr.length?arr[0]:null;
+}
+async function dbInsert(table,body){
+  const r=await fetch(SB_URL+'/rest/v1/'+table,{method:'POST',mode:'cors',headers:H,body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error(`${table} INSERT ${r.status}: ${t}`);}
+  const txt=await r.text();
+  return txt?JSON.parse(txt):[];
+}
+async function dbUpdate(table,body,filters=[]){
+  let url=SB_URL+'/rest/v1/'+table+'?';
+  filters.forEach((f,i)=>url+=(i?'&':'')+f);
+  const r=await fetch(url,{method:'PATCH',mode:'cors',headers:H,body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error(`${table} PATCH ${r.status}: ${t}`);}
+}
+async function dbDelete(table,filters=[]){
+  let url=SB_URL+'/rest/v1/'+table+'?';
+  filters.forEach((f,i)=>url+=(i?'&':'')+f);
+  const r=await fetch(url,{method:'DELETE',mode:'cors',headers:{...H,'Prefer':''},body:undefined});
+  if(!r.ok){const t=await r.text();throw new Error(`${table} DELETE ${r.status}: ${t}`);}
+}
+
+let sups=[],ings=[],frows=[],vers=[],selMult=4,manPr=false,isort={col:'name',dir:1},costFrowsOverride=null,currentVersionId=null;
+
+const fmtRp=n=>'Rp '+Math.round(n).toLocaleString('id-ID');
+const fmtN=n=>Math.round(n).toLocaleString('id-ID');
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function toast(msg,type='success',dur=3000){
+  const w=document.getElementById('twrap'),t=document.createElement('div');
+  t.className=`toast ${type}`;t.textContent=msg;w.appendChild(t);
+  requestAnimationFrame(()=>t.classList.add('show'));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},dur);
+}
+function showLov(msg='Loading...'){document.getElementById('lot').textContent=msg;document.getElementById('lov').style.display='flex';}
+function hideLov(){document.getElementById('lov').style.display='none';}
+
+async function init(){
+  showLov('Connecting to database...');
+  try{
+    await loadWS();
+    showLov('Loading suppliers...');
+    await loadSups();
+    showLov('Loading ingredients...');
+    await loadIngs();
+    showLov('Loading versions...');
+    await loadVers();
+    renderSups();renderIngs();renderVers();populateFormulaSelector();populateCostFormulaSelector();updInv();rcc();
+    hideLov();toast('Ramu loaded','success');
+  }catch(e){
+    hideLov();
+    const msg=String(e.message||e);
+    console.error('Ramu init error:',msg,e);
+    document.body.insertAdjacentHTML('beforeend',
+      `<div style="position:fixed;top:0;left:0;right:0;background:#E24B4A;color:white;padding:16px 20px;font-size:13px;z-index:99999;font-family:monospace;white-space:pre-wrap;word-break:break-all">
+        ERROR: ${msg}
+        <br><br><button onclick="this.parentNode.remove()" style="background:white;color:#E24B4A;border:none;padding:4px 10px;cursor:pointer;border-radius:4px;font-size:12px">Dismiss</button>
+      </div>`
+    );
+  }
+}
+
+async function loadWS(){
+  const data=await dbGetOne('workspaces','*',['id=eq.'+WID]);
+  if(data){
+    document.getElementById('wsbadge').textContent=data.name||'Workspace';
+    if(data.tax_rate!=null)document.getElementById('ppn').value=data.tax_rate;
+    if(data.instagram)document.getElementById('ig').value=data.instagram;
+    if(data.bank_name)document.getElementById('bk').value=data.bank_name;
+    if(data.bank_account)document.getElementById('ba').value=data.bank_account;
+    if(data.ewallet)document.getElementById('ew').value=data.ewallet;
+    if(data.whatsapp)document.getElementById('wa').value=data.whatsapp;
+    if(data.invoice_note)document.getElementById('nt').value=data.invoice_note;
+  }
+}
+
+async function loadSups(){
+  const data=await dbGet('suppliers','id,name,contact_person,phone,email,city,country,notes,workspace_id',['workspace_id=eq.'+WID,'order=name.asc']);
+  sups=(data||[]).map(s=>({id:s.id,name:s.name||'',contact_person:s.contact_person||null,phone:s.phone||null,email:s.email||null,city:s.city||null,country:s.country||'Indonesia',notes:s.notes||null,workspace_id:s.workspace_id}));
+}
+function renderSups(){
+  const loc=sups.filter(s=>s.country==='Indonesia').length;
+  document.getElementById('s-total').textContent=sups.length;
+  document.getElementById('s-local').textContent=loc;
+  document.getElementById('s-intl').textContent=sups.length-loc;
+  document.getElementById('s-ing').textContent=ings.filter(i=>i.supplier_id).length;
+  const w=document.getElementById('sgrid');
+  if(!sups.length){w.innerHTML='<div class="emp">No suppliers yet. Add your first supplier.</div>';return;}
+  w.innerHTML=`<div class="sg">${sups.map(s=>`
+    <div class="sc">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="sn">${esc(s.name)}</div>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-sm" onclick="editSup('${s.id}')">Edit</button>
+          <button class="btn btn-sm" style="color:var(--red)" onclick="delSup('${s.id}')">Delete</button>
+        </div>
+      </div>
+      <div class="sm">
+        ${s.contact_person?`<div>${esc(s.contact_person)}</div>`:''}
+        ${s.phone?`<div>${esc(s.phone)}</div>`:''}
+        ${s.email?`<div>${esc(s.email)}</div>`:''}
+        ${s.city?`<div>${esc(s.city)}${s.country&&s.country!=='Indonesia'?', '+esc(s.country):''}</div>`:''}
+        ${s.notes?`<div style="margin-top:4px;font-style:italic">${esc(s.notes)}</div>`:''}
+      </div>
+    </div>`).join('')}</div>`;
+}
+function openSupMod(sup=null){
+  document.getElementById('smtitle').textContent=sup?'Edit supplier':'Add supplier';
+  document.getElementById('smid').value=sup?.id||'';
+  document.getElementById('smn').value=sup?.name||'';
+  document.getElementById('smc').value=sup?.contact_person||'';
+  document.getElementById('smph').value=sup?.phone||'';
+  document.getElementById('sme').value=sup?.email||'';
+  document.getElementById('smcy').value=sup?.city||'';
+  document.getElementById('smco').value=sup?.country||'Indonesia';
+  document.getElementById('smnt').value=sup?.notes||'';
+  document.getElementById('supmod').style.display='flex';
+  setTimeout(()=>document.getElementById('smn').focus(),50);
+}
+function closeSupMod(){document.getElementById('supmod').style.display='none';}
+async function saveSup(){
+  const name=document.getElementById('smn').value.trim();
+  if(!name){toast('Supplier name is required','error');return;}
+  const id=document.getElementById('smid').value;
+  const p={workspace_id:WID,name,contact_person:document.getElementById('smc').value||null,phone:document.getElementById('smph').value||null,email:document.getElementById('sme').value||null,city:document.getElementById('smcy').value||null,country:document.getElementById('smco').value||'Indonesia',notes:document.getElementById('smnt').value||null};
+  try{
+    if(id)await dbUpdate('suppliers',p,['id=eq.'+id]);
+    else await dbInsert('suppliers',p);
+    closeSupMod();await loadSups();renderSups();renderIngs();toast(id?'Supplier updated':'Supplier added','success');
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+function editSup(id){openSupMod(sups.find(s=>s.id===id));}
+async function delSup(id){
+  const s=sups.find(x=>x.id===id);
+  if(!confirm(`Delete "${s?.name}"?`))return;
+  try{
+    await dbDelete('suppliers',['id=eq.'+id]);
+    await loadSups();renderSups();toast('Supplier deleted','success');
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+
+async function loadIngs(){
+  const data=await dbGet(
+    'ingredients',
+    'id,name,category,role,cost_per_g,stock_g,reorder_at_g,last_purchase,supplier_id,workspace_id,suppliers(name)',
+    ['workspace_id=eq.'+WID]
+  );
+  ings=(data||[]).map(i=>({
+    id:i.id,name:i.name||'',category:i.category||'',role:i.role||'—',
+    cost_per_g:i.cost_per_g||0,stock_g:i.stock_g||0,reorder_at_g:i.reorder_at_g||0,
+    last_purchase:i.last_purchase||null,supplier_id:i.supplier_id||null,
+    workspace_id:i.workspace_id,supplierName:i.suppliers?.name||''
+  }));
+}
+
+let pendingIngs=[];
+
+function stSt(i){
+  if((i.stock_g||0)<=0)return{l:'Out of stock',c:'b-out'};
+  if((i.stock_g||0)>0&&(i.stock_g||0)<=(i.reorder_at_g||0))return{l:'Low — reorder',c:'b-low'};
+  return{l:'In stock',c:'b-ok'};
+}
+function sortIng(col){
+  if(isort.col===col)isort.dir*=-1;else{isort.col=col;isort.dir=1;}
+  ['n','s'].forEach(c=>{const id=c==='n'?'sn':'ss';const el=document.getElementById(id);if(el){el.textContent=(c==='n'?isort.col==='name':isort.col==='supplier')?(isort.dir===1?'↑':'↓'):'↕';el.style.opacity=(c==='n'?isort.col==='name':isort.col==='supplier')?'1':'0.4';}});
+  renderIngs();
+}
+
+function ingRowHtml(ing,isPending,pidx){
+  const st=stSt(ing);
+  const sOpts=`<option value="">— no supplier —</option>`+sups.map(s=>`<option value="${s.id}"${s.id===ing.supplier_id?' selected':''}>${esc(s.name)}</option>`).join('');
+  const cOpts=`<option value="">—</option>`+CATS.map(c=>`<option${c===ing.category?' selected':''}>${c}</option>`).join('');
+  const rOpts=ROLES.map(r=>`<option${r===ing.role?' selected':''}>${r}</option>`).join('');
+  if(isPending){
+    return `<tr class="row-pending" data-pidx="${pidx}">
+      <td><input class="ni" value="${esc(ing.name||'')}" style="width:100%" placeholder="Ingredient name"
+        oninput="pendingIngs[${pidx}].name=this.value"></td>
+      <td><select class="ni" style="width:100%" onchange="pendingIngs[${pidx}].category=this.value">${cOpts}</select></td>
+      <td><select class="ni" style="width:100%" onchange="pendingIngs[${pidx}].role=this.value">${rOpts}</select></td>
+      <td><select class="ni" style="width:100%" onchange="pendingIngs[${pidx}].supplier_id=this.value||null">${sOpts}</select></td>
+      <td><input class="ni" type="text" inputmode="decimal" value="${ing.cost_per_g||''}" placeholder="0" style="width:80px"
+        oninput="pendingIngs[${pidx}].cost_per_g=parseFloat(this.value)||0"></td>
+      <td><input class="ni" type="text" inputmode="decimal" value="${ing.stock_g||''}" placeholder="0" style="width:70px"
+        oninput="pendingIngs[${pidx}].stock_g=parseFloat(this.value)||0"></td>
+      <td><input class="ni" type="text" inputmode="decimal" value="${ing.reorder_at_g||''}" placeholder="0" style="width:70px"
+        oninput="pendingIngs[${pidx}].reorder_at_g=parseFloat(this.value)||0"></td>
+      <td><input class="ni" type="date" value="${ing.last_purchase||''}" style="width:130px"
+        oninput="pendingIngs[${pidx}].last_purchase=this.value||null"></td>
+      <td><span style="font-size:11px;color:var(--amber);font-weight:500">Unsaved<span class="unsaved-dot"></span></span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-save-row" onclick="savePendingIng(${pidx})">Save</button>
+        <button class="btn-del" onclick="discardPendingIng(${pidx})" style="margin-left:2px">×</button>
+      </td>
+    </tr>`;
+  }
+  return `<tr>
+    <td><input class="ni" value="${esc(ing.name)}" style="width:100%"
+      onchange="updIngField('${ing.id}','name',this.value)"></td>
+    <td><select class="ni" style="width:100%" onchange="updIngField('${ing.id}','category',this.value)">${cOpts}</select></td>
+    <td><select class="ni" style="width:100%" onchange="updIngField('${ing.id}','role',this.value)">${rOpts}</select></td>
+    <td><select class="ni" style="width:100%" onchange="updIngField('${ing.id}','supplier_id',this.value||null)">${sOpts}</select></td>
+    <td><input class="ni" type="text" inputmode="decimal" value="${ing.cost_per_g||0}" style="width:80px"
+      onchange="updIngField('${ing.id}','cost_per_g',parseFloat(this.value)||0)"></td>
+    <td><input class="ni" type="text" inputmode="decimal" value="${ing.stock_g||0}" style="width:70px"
+      onchange="updIngField('${ing.id}','stock_g',parseFloat(this.value)||0)"></td>
+    <td><input class="ni" type="text" inputmode="decimal" value="${ing.reorder_at_g||0}" style="width:70px"
+      onchange="updIngField('${ing.id}','reorder_at_g',parseFloat(this.value)||0)"></td>
+    <td><input class="ni" type="date" value="${ing.last_purchase||''}" style="width:130px"
+      onchange="updIngField('${ing.id}','last_purchase',this.value||null)"></td>
+    <td><span class="badge ${st.c}">${st.l}</span></td>
+    <td style="white-space:nowrap">
+      <button class="btn-save-row" onclick="updIngSave('${ing.id}',this)">Save</button>
+      <button class="btn-del" onclick="delIng('${ing.id}')" style="margin-left:2px">×</button>
+    </td>
+  </tr>`;
+}
+
+function renderIngs(){
+  try{
+  const q=(document.getElementById('isearch')?.value||'').toLowerCase();
+  let saved=ings.filter(i=>i.name.toLowerCase().includes(q)||(i.category||'').toLowerCase().includes(q)||(i.supplierName||'').toLowerCase().includes(q));
+  saved.sort((a,b)=>{const av=isort.col==='supplier'?(a.supplierName||''):(a.name||''),bv=isort.col==='supplier'?(b.supplierName||''):(b.name||'');return av.toLowerCase()<bv.toLowerCase()?-isort.dir:av.toLowerCase()>bv.toLowerCase()?isort.dir:0;});
+  const low=ings.filter(i=>i.stock_g>0&&i.stock_g<=i.reorder_at_g).length,out=ings.filter(i=>(i.stock_g||0)<=0).length,val=ings.reduce((s,i)=>s+(i.stock_g||0)*(i.cost_per_g||0),0);
+  document.getElementById('i-total').textContent=ings.length;
+  document.getElementById('i-val').textContent=fmtRp(val);
+  document.getElementById('i-low').textContent=low;
+  document.getElementById('i-out').textContent=out;
+  const al=document.getElementById('ialert'),alerts=ings.filter(i=>(i.stock_g||0)>0&&(i.stock_g||0)<=(i.reorder_at_g||0)&&(i.reorder_at_g||0)>0);
+  if(alerts.length){al.textContent=alerts.length+' ingredient'+(alerts.length>1?'s':'')+' need attention: '+alerts.map(i=>i.name+(i.stock_g<=0?' (OUT)':' (low)')).join(', ');al.classList.add('show');}else al.classList.remove('show');
+  const body=document.getElementById('ibody');
+  const pendingHtml=pendingIngs.map((p,i)=>ingRowHtml(p,true,i)).join('');
+  const savedHtml=saved.length?saved.map(ing=>ingRowHtml(ing,false,null)).join(''):`<tr><td colspan="10"><div class="emp">No saved ingredients yet. Add one above.</div></td></tr>`;
+  body.innerHTML=pendingHtml+savedHtml;
+  }catch(e){console.error('renderIngs error:',e);toast('Render error: '+e.message,'error',5000);}
+}
+
+function addIngRow(){
+  try{
+    pendingIngs.unshift({name:'',category:'',role:'—',supplier_id:null,cost_per_g:0,stock_g:0,reorder_at_g:0,last_purchase:null});
+    renderIngs();
+    setTimeout(()=>{const first=document.querySelector('#ibody tr.row-pending input');if(first)first.focus();},50);
+  }catch(e){console.error('addIngRow error:',e);toast('Error adding row: '+e.message,'error',5000);}
+}
+
+async function savePendingIng(pidx){
+  const p=pendingIngs[pidx];
+  if(!p.name.trim()){toast('Please enter an ingredient name first','error');document.querySelector(`#ibody tr[data-pidx="${pidx}"] input`).focus();return;}
+  const btn=document.querySelector(`#ibody tr[data-pidx="${pidx}"] .btn-save-row`);
+  if(btn){btn.textContent='Saving...';btn.disabled=true;}
+  try{
+    const arr=await dbInsert('ingredients',{workspace_id:WID,name:p.name.trim(),category:p.category||null,role:p.role||null,supplier_id:p.supplier_id||null,cost_per_g:p.cost_per_g||0,stock_g:p.stock_g||0,reorder_at_g:p.reorder_at_g||0,last_purchase:p.last_purchase||null});
+    const data=arr&&arr.length?arr[0]:null;
+    if(!data)throw new Error('No data returned');
+    const supName=sups.find(s=>s.id===data.supplier_id)?.name||'';
+    const plain={id:data.id,name:data.name||'',category:data.category||'',role:data.role||'—',cost_per_g:data.cost_per_g||0,stock_g:data.stock_g||0,reorder_at_g:data.reorder_at_g||0,last_purchase:data.last_purchase||null,supplier_id:data.supplier_id||null,workspace_id:data.workspace_id,supplierName:supName};
+    pendingIngs.splice(pidx,1);
+    ings.unshift(plain);
+    pendingIngs.unshift({name:'',category:'',role:'—',supplier_id:null,cost_per_g:0,stock_g:0,reorder_at_g:0,last_purchase:null});
+    renderIngs();syncFCosts();toast(`"${plain.name}" saved — ready for next entry`,'success');
+    setTimeout(()=>{const first=document.querySelector('#ibody tr.row-pending input');if(first)first.focus();},50);
+  }catch(e){toast('Error saving: '+e.message,'error');if(btn){btn.textContent='Save';btn.disabled=false;}}
+}
+
+function discardPendingIng(pidx){
+  pendingIngs.splice(pidx,1);renderIngs();
+}
+
+function ingRowData(id){
+  const row=document.querySelector(`#ibody tr`);
+  const trs=[...document.querySelectorAll('#ibody tr:not(.row-pending)')];
+  const tr=trs.find(r=>r.querySelector(`button[onclick*="'${id}'"]`));
+  if(!tr)return null;
+  const inputs=[...tr.querySelectorAll('input,select')];
+  return{
+    name:inputs[0]?.value||'',
+    category:inputs[1]?.value||null,
+    role:inputs[2]?.value||null,
+    supplier_id:inputs[3]?.value||null,
+    cost_per_g:parseFloat(inputs[4]?.value)||0,
+    stock_g:parseFloat(inputs[5]?.value)||0,
+    reorder_at_g:parseFloat(inputs[6]?.value)||0,
+    last_purchase:inputs[7]?.value||null,
+  };
+}
+
+function updIngField(id,field,value){
+  const ing=ings.find(i=>i.id===id);if(ing){ing[field]=value;if(field==='supplier_id')ing.supplierName=sups.find(s=>s.id===value)?.name||'';}
+}
+
+async function updIngSave(id,btn){
+  const ing=ings.find(i=>i.id===id);if(!ing)return;
+  const data=ingRowData(id);if(!data)return;
+  if(!data.name.trim()){toast('Ingredient name cannot be empty','error');return;}
+  if(btn){btn.textContent='Saving...';btn.disabled=true;}
+  try{
+    await dbUpdate('ingredients',{...data,updated_at:new Date().toISOString()},['id=eq.'+id]);
+    Object.assign(ing,data);
+    ing.supplierName=sups.find(s=>s.id===data.supplier_id)?.name||'';
+    if(btn){btn.textContent='Saved';setTimeout(()=>{btn.textContent='Save';btn.disabled=false;},1200);}
+    syncFCosts();renderIngs();toast(`"${data.name}" updated`,'success',1500);
+  }catch(e){toast('Save error: '+e.message,'error');if(btn){btn.textContent='Save';btn.disabled=false;}}
+}
+
+async function delIng(id){
+  const ing=ings.find(i=>i.id===id);
+  if(!confirm(`Delete "${ing?.name||'this ingredient'}"? This cannot be undone.`))return;
+  try{
+    await dbDelete('ingredients',['id=eq.'+id]);
+    ings=ings.filter(i=>i.id!==id);renderIngs();toast('Ingredient deleted','success');
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+
+function syncFCosts(){frows.forEach(r=>{const m=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());if(m)r.costPerG=m.cost_per_g;});renderFRows();}
+
+let fMode='pct';
+let acActiveIdx={};
+
+function setFMode(mode){
+  fMode=mode;
+  document.getElementById('mode-pct').style.background=mode==='pct'?'var(--blue)':'white';
+  document.getElementById('mode-pct').style.color=mode==='pct'?'white':'var(--gray-400)';
+  document.getElementById('mode-g').style.background=mode==='g'?'var(--blue)':'white';
+  document.getElementById('mode-g').style.color=mode==='g'?'white':'var(--gray-400)';
+  renderFRows();
+}
+
+function getFTotals(){
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  let g=0,cost=0;
+  frows.forEach(r=>{
+    const gVal=fMode==='pct'?((parseFloat(r.pct)||0)*vol/100):parseFloat(r.amount)||0;
+    g+=gVal;cost+=gVal*(parseFloat(r.costPerG)||0);
+  });
+  return{g,cost};
+}
+
+function pctToG(pct){
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  return(parseFloat(pct)||0)*vol/100;
+}
+function gToPct(g,tg){return tg>0?((parseFloat(g)||0)/tg*100):0;}
+
+function updPctStatus(){
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  const psEl=document.getElementById('pct-status');
+  if(psEl)psEl.style.display='flex';
+  if(fMode==='pct'){
+    const totalPct=frows.reduce((s,r)=>s+(parseFloat(r.pct)||0),0);
+    const ptEl=document.getElementById('pct-total');
+    const phEl=document.getElementById('pct-hint');
+    const gtEl=document.getElementById('g-total-display');
+    if(ptEl){ptEl.textContent=totalPct.toFixed(2)+'%';ptEl.style.color=Math.abs(totalPct-100)<0.01?'var(--green)':totalPct>100?'var(--red)':'var(--gray-900)';}
+    if(phEl){
+      if(Math.abs(totalPct-100)<0.01)phEl.textContent='✓ 100%';
+      else if(totalPct>100)phEl.textContent='Over by '+(totalPct-100).toFixed(2)+'%';
+      else if(totalPct>0)phEl.textContent=(100-totalPct).toFixed(2)+'% remaining';
+      else phEl.textContent='Enter % per ingredient';
+    }
+    if(gtEl)gtEl.textContent='= '+(totalPct*vol/100).toFixed(3)+'g';
+  } else {
+    const totalG=frows.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+    const totalPct=vol>0?(totalG/vol*100):0;
+    const ptEl=document.getElementById('pct-total');
+    const phEl=document.getElementById('pct-hint');
+    const gtEl=document.getElementById('g-total-display');
+    if(ptEl){ptEl.textContent=totalPct.toFixed(2)+'%';ptEl.style.color=Math.abs(totalPct-100)<0.01?'var(--green)':totalPct>100?'var(--red)':'var(--gray-900)';}
+    if(phEl){
+      if(Math.abs(totalPct-100)<0.01)phEl.textContent='✓ 100%';
+      else if(totalPct>100)phEl.textContent='Over by '+(totalPct-100).toFixed(2)+'%';
+      else if(totalPct>0)phEl.textContent=(100-totalPct).toFixed(2)+'% remaining';
+      else phEl.textContent='Enter grams per ingredient';
+    }
+    if(gtEl)gtEl.textContent=totalG.toFixed(3)+'g / '+vol+'g base';
+  }
+}
+
+function renderFRows(){
+  const body=document.getElementById('fbody');
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  const{g:tg}=getFTotals();
+  const psEl=document.getElementById('pct-status');
+  if(psEl)psEl.style.display='flex';
+  updPctStatus();
+  if(!frows.length){
+    body.innerHTML=`<tr><td colspan="7"><div class="emp">Add ingredients to build your formula.</div></td></tr>`;
+    updFMet();return;
+  }
+  body.innerHTML='';
+  frows.forEach((row,idx)=>{
+    const gVal=fMode==='pct'?pctToG(row.pct):parseFloat(row.amount)||0;
+    const c=parseFloat(row.costPerG)||0;
+    const pct=fMode==='pct'?(parseFloat(row.pct)||0):gToPct(gVal,tg);
+    const m=ings.find(i=>i.name.toLowerCase()===row.name.toLowerCase());
+    const cbg=m?'style="background:#EAF3DE"':'';
+    const sw=m&&(m.stock_g||0)<gVal?`<div style="font-size:11px;color:var(--amber);margin-top:2px">Only ${m.stock_g}g in stock</div>`:'';
+    const roleColors={'Top':'#E0F2FA','Mid':'#EAF3DE','Base':'#F3EAD8','Bridge':'#EDE0F2','Musk':'#F2E0E8','Accord':'#F2F2E0'};
+    const role=m?.role&&m.role!=='—'?m.role:null;
+    const roleBadge=role?`<span style="font-size:10px;padding:1px 6px;border-radius:20px;background:${roleColors[role]||'var(--gray-100)'};color:var(--gray-600);margin-left:4px">${role}</span>`:'';
+    const refData=getRef(row.name);
+    const refBtn=refData?`<span title="${refData.odor||''} | Typical: ${refData.usage[0]}-${refData.usage[1]}% | ${refData.volatility}" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--gray-200);font-size:9px;color:var(--gray-400);cursor:help;margin-left:4px;flex-shrink:0" onclick="showRefPopup('${esc(row.name)}')">i</span>`:'';
+    const ifraSt=row.name?ifraStatus(row.name,pct):null;
+    const ifraWarn=ifraSt&&ifraSt.type!=='ok'?`<div style="font-size:11px;color:${ifraSt.type==='banned'?'var(--red)':ifraSt.type==='over'?'var(--red)':'var(--amber)'};margin-top:2px">⚠ ${ifraSt.msg}</div>`:'';
+
+    const pctCell=fMode==='pct'
+      ?`<input class="ni" type="text" inputmode="decimal" id="pct-${idx}" value="${row.pct??''}" placeholder="0.00" style="width:72px;font-weight:500"
+          oninput="frows[${idx}].pct=this.value;updPctStatus();updFMetOnly()"
+          onblur="frows[${idx}].pct=this.value;softRecalc()"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].pct=this.value;softRecalc();if(${idx}+1<frows.length){const nx=document.getElementById('ac-'+(${idx}+1));if(nx){nx.focus();nx.select();}}else{addFRow();}}">`
+      :`<span style="font-size:13px;color:var(--gray-400)">${pct.toFixed(2)}%</span>`;
+
+    const gCell=fMode==='g'
+      ?`<input class="ni" type="text" inputmode="decimal" id="g-${idx}" value="${row.amount??''}" placeholder="0.000" style="width:72px;font-weight:500"
+          oninput="frows[${idx}].amount=this.value;updFMetOnly();updGRowBar(${idx})"
+          onblur="frows[${idx}].amount=this.value;softRecalc()"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].amount=this.value;softRecalc();if(${idx}+1<frows.length){const nx=document.getElementById('ac-'+(${idx}+1));if(nx){nx.focus();nx.select();}}else{addFRow();}}">`
+      :`<span style="font-size:13px;color:var(--gray-400)">${gVal.toFixed(4).replace(/(\.\d*[1-9])0+$/,'$1').replace(/\.0+$/,'')}g</span>`;
+
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><div class="ac-wrap">
+        <input class="ni" value="${esc(row.name)}" style="width:100%" id="ac-${idx}"
+          oninput="frows[${idx}].name=this.value;hAC(${idx},this.value)"
+          onkeydown="acKey(event,${idx})"
+          onblur="setTimeout(()=>cAC(${idx}),180)"
+          onfocus="hAC(${idx},this.value)">
+        <div class="ac-drop" id="drop-${idx}"></div>
+      </div>${refBtn}${roleBadge}${sw}${ifraWarn}</td>
+      <td><span style="font-size:12px;color:var(--gray-600)">${role||'—'}</span></td>
+      <td>${pctCell}</td>
+      <td>${gCell}</td>
+      <td><input class="ni" type="text" inputmode="decimal" id="cpg-${idx}" value="${row.costPerG??''}" placeholder="0" style="width:80px" ${cbg}
+        oninput="frows[${idx}].costPerG=this.value;updFMetOnly()"
+        onblur="frows[${idx}].costPerG=this.value;softRecalc()"></td>
+      <td><div class="pbw" style="width:92%"><div class="pb" style="width:${Math.min(pct,100)}%"></div></div>
+        <div style="font-size:11px;color:var(--gray-400);margin-top:2px">${pct.toFixed(2)}%</div></td>
+      <td style="font-size:13px;color:var(--gray-400);text-align:right;white-space:nowrap">${fmtRp(gVal*c)}</td>
+      <td><button class="btn-del" onclick="remFRow(${idx})">×</button></td>`;
+    body.appendChild(tr);
+  });
+  updFMet();updFAlerts();rcc();updInv();
+}
+
+function softRecalc(){
+  updFMet();updFAlerts();rcc();updInv();updPctStatus();
+}
+
+function updGRowBar(idx){
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  let totalG=0;
+  frows.forEach(r=>totalG+=parseFloat(r.amount)||0);
+  const g=parseFloat(frows[idx]?.amount)||0;
+  const pct=totalG>0?(g/totalG*100):0;
+  const bar=document.getElementById(`pb-${idx}`);
+  const lbl=document.getElementById(`pblbl-${idx}`);
+  if(bar)bar.style.width=Math.min(pct,100)+'%';
+  if(lbl)lbl.textContent=pct.toFixed(2)+'%';
+}
+
+function hAC(idx,val){
+  acActiveIdx[idx]=-1;
+  const input=document.getElementById(`ac-${idx}`);
+  const drop=document.getElementById(`drop-${idx}`);
+  if(!input||!drop)return;
+  const q=(val||'').toLowerCase();
+  const ms=q.length<1?ings:ings.filter(i=>i.name.toLowerCase().includes(q));
+  if(!ms.length){drop.style.display='none';return;}
+  // Position fixed relative to viewport
+  const rect=input.getBoundingClientRect();
+  drop.style.display='block';
+  drop.style.left=rect.left+'px';
+  drop.style.top=(rect.bottom+2)+'px';
+  drop.style.width=Math.max(rect.width,240)+'px';
+  drop.innerHTML='';
+  drop._matches=ms.slice(0,8);
+  drop._matches.forEach((m,i)=>{
+    const st=stSt(m);
+    const div=document.createElement('div');div.className='ac-item';div.dataset.i=i;
+    div.innerHTML=`<span>${esc(m.name)}</span><span class="ac-meta">${st.c==='b-ok'?'Rp '+fmtN(m.cost_per_g)+'/g':st.l}</span>`;
+    div.onmousedown=(e)=>{e.preventDefault();selAC(idx,m);};
+    drop.appendChild(div);
+  });
+}
+
+function acKey(e,idx){
+  const drop=document.getElementById(`drop-${idx}`);
+  if(!drop||drop.style.display==='none'){
+    if(e.key==='ArrowDown'){e.preventDefault();hAC(idx,document.getElementById(`ac-${idx}`)?.value||'');}
+    return;
+  }  const items=[...drop.querySelectorAll('.ac-item')];
+  let cur=acActiveIdx[idx]??-1;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();cur=Math.min(cur+1,items.length-1);
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();cur=Math.max(cur-1,0);
+  } else if(e.key==='Enter'){
+    e.preventDefault();
+    if(cur>=0&&drop._matches[cur])selAC(idx,drop._matches[cur]);
+    return;
+  } else if(e.key==='Escape'){
+    cAC(idx);return;
+  } else return;
+  acActiveIdx[idx]=cur;
+  items.forEach((el,i)=>el.classList.toggle('ac-active',i===cur));
+  items[cur]?.scrollIntoView({block:'nearest'});
+}
+
+function selAC(idx,m){
+  frows[idx].name=m.name;frows[idx].costPerG=m.cost_per_g;
+  cAC(idx);renderFRows();
+  setTimeout(()=>{
+    const next=fMode==='pct'?document.getElementById(`pct-${idx}`):document.getElementById(`g-${idx}`);
+    if(next){next.focus();next.select();}
+  },60);
+}
+
+function cAC(idx){
+  const d=document.getElementById(`drop-${idx}`);if(d)d.style.display='none';
+  acActiveIdx[idx]=-1;
+}
+
+function updFMetOnly(){updFMet();updFAlerts();}
+
+function updFAlerts(){
+  const box=document.getElementById('falerts');
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  const stockIssues=frows.filter(r=>{
+    const gVal=fMode==='pct'?pctToG(r.pct):parseFloat(r.amount)||0;
+    const m=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());
+    return m&&(m.stock_g||0)<gVal&&gVal>0;
+  });
+  const ifraIssues=frows.filter(r=>{
+    const gVal=fMode==='pct'?pctToG(r.pct):parseFloat(r.amount)||0;
+    const pct=vol>0?(gVal/vol*100):0;
+    const st=ifraStatus(r.name,pct);
+    return st&&(st.type==='banned'||st.type==='over');
+  });
+  let html='';
+  if(stockIssues.length)html+=`<div class="alert a-warn show">Stock insufficient: ${stockIssues.map(r=>{
+    const m=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());
+    const gVal=fMode==='pct'?pctToG(r.pct):parseFloat(r.amount)||0;
+    return`${r.name} (need ${gVal.toFixed(3)}g, have ${m.stock_g}g)`;
+  }).join(' · ')}</div>`;
+  if(ifraIssues.length)html+=`<div class="alert show" style="background:var(--red-light);border:0.5px solid var(--red);color:#A32D2D">IFRA violation: ${ifraIssues.map(r=>{
+    const gVal=fMode==='pct'?pctToG(r.pct):parseFloat(r.amount)||0;
+    const pct=vol>0?(gVal/vol*100):0;
+    const st=ifraStatus(r.name,pct);
+    return`${r.name} — ${st.msg}`;
+  }).join(' · ')}</div>`;
+  box.innerHTML=html;
+}
+
+function updFMet(){
+  const{g,cost}=getFTotals();
+  const vol=parseFloat(document.getElementById('bvol').value)||100;
+  document.getElementById('mw').textContent=g.toFixed(4).replace(/(\.\d*[1-9])0+$/,'$1').replace(/\.0+$/,'')||'0';
+  document.getElementById('mc').textContent=fmtRp(cost);
+  document.getElementById('mp').textContent=vol>0?fmtN(cost/vol):'—';
+  document.getElementById('mn').textContent=frows.length;
+}
+
+function recalc(){renderFRows();}
+function addFRow(){
+  frows.push({name:'',amount:0,pct:0,costPerG:0});
+  renderFRows();
+  setTimeout(()=>{
+    const lastAc=document.getElementById(`ac-${frows.length-1}`);
+    if(lastAc)lastAc.focus();
+  },50);
+}
+function remFRow(idx){frows.splice(idx,1);renderFRows();}
+
+function getBCogs(){
+  const activeRows=costFrowsOverride?costFrowsOverride.rows:frows;
+  const activeVol=costFrowsOverride?costFrowsOverride.vol:(parseFloat(document.getElementById('bvol').value)||100);
+  let cost=0;
+  activeRows.forEach(r=>{
+    const gVal=fMode==='pct'?((parseFloat(r.pct)||0)*activeVol/100):parseFloat(r.amount)||0;
+    cost+=gVal*(parseFloat(r.costPerG)||0);
+  });
+  const bs=parseFloat(document.getElementById('bsz').value)||500;
+  const bc=parseFloat(document.getElementById('bcost').value)||0;
+  const fv=parseFloat(document.getElementById('fvol').value)||50;
+  const sf=bs/activeVol,units=Math.floor(bs/fv),cpu=units>0?(cost*sf/units+bc):0;
+  return{cpu,units,bfc:cost*sf,bc,formulaName:costFrowsOverride?costFrowsOverride.name:(document.getElementById('fname')?.value||'')};
+}
+function rcc(){
+  const{cpu,units,bfc,bc}=getBCogs();
+  document.getElementById('cpb').textContent=fmtRp(cpu);
+  document.getElementById('ub').textContent=units+' units';
+  document.getElementById('tbc').textContent=fmtRp(bfc+units*bc);
+  renderPG(cpu);syncMFM(selMult,cpu);
+}
+function renderPG(cogs){
+  const g=document.getElementById('pgrid');
+  const sc=[{l:'Wholesale',m:2.5},{l:'Retail standard',m:4,rec:true},{l:'Premium',m:5.5},{l:'Prestige',m:7}];
+  g.innerHTML='';
+  sc.forEach(s=>{
+    const p=cogs*s.m,margin=cogs>0?((p-cogs)/p*100):0,markup=cogs>0?((p-cogs)/cogs*100):0;
+    const bc=margin>=60?'mb-g':margin>=40?'mb-w':'mb-b';const isSel=Math.abs(s.m-selMult)<0.01;
+    g.innerHTML+=`<div class="pc${isSel?' sel':''}" onclick="selSc(${s.m})">${s.rec?'<div class="rec">Recommended</div>':''}
+      <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">${s.l}</div>
+      <div style="font-size:18px;font-weight:500;color:var(--blue)">${fmtRp(p)}</div>
+      <div class="mbw"><div class="mb ${bc}" style="width:${Math.min(margin,100).toFixed(0)}%"></div></div>
+      <div style="font-size:11px;color:var(--gray-400);margin-top:3px">${margin.toFixed(0)}% margin · ${markup.toFixed(0)}% markup</div></div>`;
+  });
+}
+function selSc(m){selMult=m;const{cpu}=getBCogs();syncMFM(m,cpu);renderPG(cpu);updInv();}
+function syncMFM(mult,cogs){
+  const p=cogs*mult,margin=cogs>0?((p-cogs)/p*100):75,markup=cogs>0?((p-cogs)/cogs*100):300;
+  document.getElementById('msl').value=Math.min(85,Math.max(10,margin)).toFixed(0);
+  document.getElementById('min').value=Math.min(85,Math.max(10,margin)).toFixed(0);
+  document.getElementById('mksl').value=Math.min(700,Math.max(25,markup)).toFixed(0);
+  document.getElementById('mkin').value=Math.min(700,Math.max(25,markup)).toFixed(0);
+  updPD(cogs,p);
+}
+function onSl(type){const v=parseFloat(document.getElementById(type==='margin'?'msl':'mksl').value)||0;document.getElementById(type==='margin'?'min':'mkin').value=v;cFT(type,v);}
+function onIn(type){let v=parseFloat(document.getElementById(type==='margin'?'min':'mkin').value)||0;v=Math.min(type==='margin'?85:700,Math.max(0,v));document.getElementById(type==='margin'?'msl':'mksl').value=v;cFT(type,v);}
+function cFT(type,val){
+  const{cpu:cogs}=getBCogs();let p;
+  if(type==='margin'){p=val<100?cogs/(1-val/100):cogs*10;const mu=cogs>0?((p-cogs)/cogs*100):0;document.getElementById('mksl').value=Math.min(700,mu).toFixed(0);document.getElementById('mkin').value=Math.min(700,mu).toFixed(0);}
+  else{p=cogs*(1+val/100);const mg=cogs>0?((p-cogs)/p*100):0;document.getElementById('msl').value=Math.min(85,mg).toFixed(0);document.getElementById('min').value=Math.min(85,mg).toFixed(0);}
+  selMult=cogs>0?p/cogs:4;updPD(cogs,p);renderPG(cogs);
+}
+function updPD(cogs,price){
+  const margin=cogs>0?((price-cogs)/price*100):0,markup=cogs>0?((price-cogs)/cogs*100):0,mult=cogs>0?price/cogs:0;
+  document.getElementById('sp').textContent=fmtRp(price)+' / bottle';
+  document.getElementById('gp').textContent=fmtRp(price-cogs)+' / bottle';
+  document.getElementById('md').textContent=margin.toFixed(1)+'%';
+  document.getElementById('mkd').textContent=markup.toFixed(0)+'%';
+  document.getElementById('mld').textContent=mult.toFixed(2)+'×';
+}
+
+function bldFtr(){
+  const bk=document.getElementById('bk').value,ba=document.getElementById('ba').value;
+  const ew=document.getElementById('ew').value,wa=document.getElementById('wa').value;
+  const ig=document.getElementById('ig').value,nt=document.getElementById('nt').value;
+  let lines=[];
+  if(bk||ba)lines.push('Pembayaran: Transfer '+bk+(ba?' — No. Rek. '+ba:''));
+  if(ew)lines.push('GoPay/OVO: '+ew);if(wa)lines.push('WhatsApp: '+wa);if(ig)lines.push('Instagram: '+ig);
+  if(nt){lines.push('');lines.push(nt);}else lines.push('Terima kasih telah mendukung parfum indie Indonesia.');
+  return lines.join('<br>');
+}
+function updSig(){
+  const name=document.getElementById('sig-name')?.value||'';
+  const desig=document.getElementById('sig-desig')?.value||'';
+  const nd=document.getElementById('sig-name-display');if(nd)nd.textContent=name;
+  const dd=document.getElementById('sig-desig-display');if(dd)dd.textContent=desig;
+}
+function updInv(){
+  const fn=document.getElementById('fname').value;
+  const now=new Date();const due=new Date(now);due.setDate(due.getDate()+14);
+  const fmt=d=>d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('idate').textContent=fmt(now);document.getElementById('idue').textContent=fmt(due);
+  document.getElementById('pbn').textContent=(document.getElementById('bn').value||'Aranya Fine Fragrance').toUpperCase();
+  document.getElementById('pig').textContent=document.getElementById('ig').value;
+  document.getElementById('pcn').textContent=document.getElementById('cn').value||'—';
+  document.getElementById('pcd').textContent=document.getElementById('cd').value||'';
+  const formulaName=costFrowsOverride?costFrowsOverride.name:(document.getElementById('fname')?.value||'');
+  const pf=document.getElementById('ip');if(pf&&!manPr)pf.value=formulaName+' (50ml)';
+  document.getElementById('pft').innerHTML=bldFtr();
+  if(!manPr){const{cpu}=getBCogs();const pif=document.getElementById('ipr');if(pif)pif.value=Math.round(cpu*selMult);}
+  updIT();
+}
+function updIT(){
+  const prod=document.getElementById('ip')?.value||'—';
+  const qty=parseFloat(document.getElementById('iq')?.value)||1;
+  const up=parseFloat(document.getElementById('ipr')?.value)||0;
+  const ppn=parseFloat(document.getElementById('ppn')?.value)||0;
+  const sub=qty*up,tax=sub*ppn/100,total=sub+tax;
+  const tl=ppn===0?'Tax (0%)':ppn===11?'PPN 11%':`Tax ${ppn}%`;
+  const el=document.getElementById('taxlbl');if(el)el.textContent=tl;
+  const pv=document.getElementById('ppnp');if(pv)pv.textContent='= '+tl;
+  const b=document.getElementById('itb');
+  if(b)b.innerHTML=`<tr><td>${esc(prod)}</td><td>${qty}</td><td>bottle</td><td>${fmtRp(up)}</td><td>${fmtRp(sub)}</td></tr>`;
+  document.getElementById('isub').textContent=fmtRp(sub);
+  const tr=document.getElementById('taxrow');if(tr)tr.style.display=ppn===0?'none':'flex';
+  document.getElementById('itax').textContent=fmtRp(tax);
+  document.getElementById('itot').textContent=fmtRp(total);
+}
+async function saveInv(){
+  try{
+    await dbInsert('invoices',{workspace_id:WID,invoice_number:document.getElementById('invn').textContent,client_name:document.getElementById('cn').value,client_detail:document.getElementById('cd').value,quantity:parseFloat(document.getElementById('iq').value)||1,unit_price:parseFloat(document.getElementById('ipr').value)||0,tax_rate_snapshot:parseFloat(document.getElementById('ppn').value)||0,status:'draft'});
+    toast('Invoice saved','success');
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+function expPDF(){
+  updInv();
+  const cn=document.getElementById('cn').value||'Invoice',invn=document.getElementById('invn').textContent;
+  html2pdf().set({margin:[12,12,12,12],filename:`Aranya_${invn}_${cn.replace(/\s+/g,'_')}.pdf`,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(document.getElementById('invp')).save();
+}
+
+async function loadVers(){
+  const data=await dbGet(
+    'formula_versions',
+    'id,version_number,notes,saved_at,formula_id,formulas!inner(name,base_volume_ml,workspace_id),formula_rows(id,ingredient_name,amount_g,cost_per_g_snapshot,ingredient_id)',
+    ['formulas.workspace_id=eq.'+WID,'order=saved_at.desc']
+  );
+  vers=(data||[]).filter(v=>v.formulas).map(v=>({
+    id:v.id,version_number:v.version_number,notes:v.notes||'',saved_at:v.saved_at,formula_id:v.formula_id,
+    formulas:{name:v.formulas?.name||'',base_volume_ml:v.formulas?.base_volume_ml||100},
+    formula_rows:(v.formula_rows||[]).map(r=>({
+      id:r.id,ingredient_name:r.ingredient_name||'',
+      amount_g:r.amount_g||0,cost_per_g_snapshot:r.cost_per_g_snapshot||0,
+      ingredient_id:r.ingredient_id||null
+    }))
+  }));
+}
+async function saveVer(){
+  const name=document.getElementById('fname').value||'Untitled',vol=parseFloat(document.getElementById('bvol').value)||100;
+  if(!frows.length){toast('Add ingredients first','error');return;}
+  toast('Saving...','loading',2000);
+  try{
+    let fid;
+    const exArr=await dbGet('formulas','id',['workspace_id=eq.'+WID,'name=eq.'+encodeURIComponent(name),'limit=1']);
+    if(exArr&&exArr.length){fid=exArr[0].id;await dbUpdate('formulas',{base_volume_ml:vol},['id=eq.'+fid]);}
+    else{const fa=await dbInsert('formulas',{workspace_id:WID,name,base_volume_ml:vol,status:'active'});fid=fa[0].id;}
+    const vdArr=await dbGet('formula_versions','version_number',['formula_id=eq.'+fid,'order=version_number.desc','limit=1']);
+    const nv=vdArr&&vdArr.length?vdArr[0].version_number+1:1;
+    const nverArr=await dbInsert('formula_versions',{formula_id:fid,version_number:nv});
+    const nvid=nverArr[0].id;
+    const rows=frows.map(r=>{
+      const ing=ings.find(i=>i.name.toLowerCase()===r.name.toLowerCase());
+      const gVal=fMode==='pct'?pctToG(r.pct):parseFloat(r.amount)||0;
+      return{version_id:nvid,ingredient_id:ing?.id||null,ingredient_name:r.name,amount_g:gVal,cost_per_g_snapshot:parseFloat(r.costPerG)||0};
+    });
+    await dbInsert('formula_rows',rows);
+    await loadVers();
+    currentVersionId=nverArr[0].id;
+    renderVers();switchTab('versions');toast(`${name} v${nv} saved`,'success');
+  }catch(e){toast('Error: '+e.message,'error');}
+}
+
+function renderVers(){
+  const list=document.getElementById('vlist');
+  if(!vers.length){list.innerHTML='<div class="emp">No saved versions yet. Build a formula and click Save version.</div>';return;}
+
+  // Group by formula, preserving recency order
+  const formulaOrder=[];
+  const byFormula={};
+  vers.forEach((v,ri)=>{
+    const fid=v.formula_id;
+    if(!byFormula[fid]){byFormula[fid]=[];formulaOrder.push(fid);}
+    byFormula[fid].push({...v,ri});
+  });
+
+  list.innerHTML=formulaOrder.map(fid=>{
+    const fvers=byFormula[fid];
+    const fname=fvers[0].formulas.name;
+    const rows=fvers.map(v=>{
+      const isCur=currentVersionId===v.id;
+      const tg=(v.formula_rows||[]).reduce((s,r)=>s+(r.amount_g||0),0);
+      const tc=(v.formula_rows||[]).reduce((s,r)=>s+(r.amount_g||0)*(r.cost_per_g_snapshot||0),0);
+      const d=new Date(v.saved_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+      const ingList=(v.formula_rows||[]).map(r=>`<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;border-bottom:0.5px solid var(--border)"><span>${esc(r.ingredient_name)}</span><span style="color:var(--gray-400)">${r.amount_g}g · Rp${fmtN(r.amount_g*r.cost_per_g_snapshot)}</span></div>`).join('');
+      return`<div class="vrow ${isCur?'cur':''}" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:13px;font-weight:500">v${v.version_number}${isCur?'<span class="vbadge">loaded</span>':''}</div>
+            <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${d} · ${(v.formula_rows||[]).length} ingredients · ${tg.toFixed(1)}g · ${fmtRp(tc)} COGS</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn btn-sm" onclick="toggleVerIngredients('vi-${v.id}')" style="color:var(--gray-400)">Details</button>
+            <button class="btn btn-sm${isCur?' btn-primary':''}" onclick="restVer(${v.ri})">${isCur?'Loaded':'Restore'}</button>
+          </div>
+        </div>
+        <div id="vi-${v.id}" style="display:none;border-top:0.5px solid var(--border);padding-top:8px">
+          ${ingList||'<div style="font-size:12px;color:var(--gray-400)">No ingredients recorded</div>'}
+        </div>
+      </div>`;
+    }).join('');
+
+    return`<div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:500;color:var(--gray-900);padding:8px 0 6px;border-bottom:0.5px solid var(--border);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+        <span>⚗️ ${esc(fname)}</span>
+        <span style="font-size:11px;color:var(--gray-400);font-weight:400">${fvers.length} version${fvers.length>1?'s':''}</span>
+      </div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+function toggleVerIngredients(id){
+  const el=document.getElementById(id);
+  if(el)el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function restVer(ri){
+  const v=vers[ri];
+  const vol=v.formulas.base_volume_ml||100;
+  frows=(v.formula_rows||[]).map(r=>({
+    name:r.ingredient_name,
+    amount:r.amount_g,
+    pct:vol>0?(r.amount_g/vol*100):0,
+    costPerG:r.cost_per_g_snapshot
+  }));
+  document.getElementById('fname').value=v.formulas.name;
+  document.getElementById('bvol').value=vol;
+  currentVersionId=v.id;
+  switchTab('formula');renderFRows();
+  toast(`Loaded ${v.formulas.name} v${v.version_number}`,'success');
+}
+
+function newFormula(){
+  if(frows.length&&!confirm('Clear current formula and start fresh?'))return;
+  frows=[];
+  currentVersionId=null;
+  document.getElementById('fname').value='New formula';
+  document.getElementById('bvol').value='100';
+  const sel=document.getElementById('load-formula-sel');if(sel)sel.value='';
+  renderFRows();toast('New formula started','success',1500);
+}
+
+function populateFormulaSelector(){
+  const sel=document.getElementById('load-formula-sel');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— select formula —</option>';
+  const seen=new Set();
+  vers.forEach(v=>{
+    if(!seen.has(v.formula_id)){
+      seen.add(v.formula_id);
+      const opt=document.createElement('option');
+      opt.value=v.formula_id;
+      opt.textContent=v.formulas.name;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+function loadFormulaIntoBuilder(formulaId){
+  if(!formulaId)return;
+  const latest=vers.find(v=>v.formula_id===formulaId);
+  if(!latest){toast('No saved versions found','error');return;}
+  const vol=latest.formulas.base_volume_ml||100;
+  frows=(latest.formula_rows||[]).map(r=>({name:r.ingredient_name,amount:r.amount_g,pct:vol>0?(r.amount_g/vol*100):0,costPerG:r.cost_per_g_snapshot}));
+  document.getElementById('fname').value=latest.formulas.name;
+  document.getElementById('bvol').value=vol;
+  renderFRows();toast(`Loaded ${latest.formulas.name} v${latest.version_number}`,'success');
+}
+
+let refFilter='all';
+function setRefFilter(f,btn){
+  refFilter=f;
+  document.querySelectorAll('.ref-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRef();
+}
+function showRefPopup(name){
+  const r=getRef(name);
+  if(!r)return;
+  const existing=document.getElementById('ref-popup');
+  if(existing)existing.remove();
+  const banned=r.ifra===0,restricted=r.ifra!==null&&r.ifra>0;
+  const ifraLine=banned?`<div style="color:var(--red);font-weight:500">⛔ BANNED by IFRA</div>`:restricted?`<div style="color:#854F0B">⚠ IFRA Cat.4 max: ${r.ifra}%</div>`:`<div style="color:var(--green)">✓ No IFRA restriction</div>`;
+  const tenacityLabel=r.tenacity>=9?'Exceptional':r.tenacity>=7?'Good':r.tenacity>=5?'Moderate':r.tenacity>=3?'Low':'Fleeting';
+  const pop=document.createElement('div');
+  pop.id='ref-popup';
+  pop.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:white;border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;z-index:9999;width:340px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,0.15)';
+  pop.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:500">${name}</div>
+      <button onclick="document.getElementById('ref-popup').remove()" style="border:none;background:none;cursor:pointer;font-size:18px;color:var(--gray-400);padding:0;line-height:1">×</button>
+    </div>
+    <div style="font-size:12px;font-style:italic;color:var(--gray-600);margin-bottom:12px">${r.odor||''}</div>
+    <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--gray-400)">Note position</span><span style="font-weight:500">${r.volatility||'—'}</span></div>
+      <div style="display:flex;justify-content:space-between"><span style="color:var(--gray-400)">Typical usage</span><span style="font-weight:500">${r.usage[0]===0&&r.usage[1]===0?'Do not use':r.usage[0]+'–'+r.usage[1]+'%'}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center"><span style="color:var(--gray-400)">Tenacity on skin</span><span style="font-weight:500">${tenacityLabel} (${r.tenacity}/10)</span></div>
+      <div style="height:4px;background:var(--gray-100);border-radius:2px;overflow:hidden;margin-bottom:2px"><div style="width:${r.tenacity*10}%;height:100%;background:${r.tenacity>=8?'var(--green)':r.tenacity>=5?'var(--blue)':'var(--amber)'};border-radius:2px"></div></div>
+      ${r.bp?`<div style="display:flex;justify-content:space-between"><span style="color:var(--gray-400)">Boiling point</span><span style="font-weight:500">${r.bp}°C</span></div>`:''}
+      ${r.threshold?`<div style="display:flex;justify-content:space-between"><span style="color:var(--gray-400)">Odor threshold</span><span style="font-weight:500">${r.threshold} ppb</span></div>`:''}
+      ${ifraLine}
+      ${r.notes?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);color:var(--gray-600);line-height:1.5">${r.notes}</div>`:''}
+    </div>
+  `;
+  document.body.appendChild(pop);
+  pop.addEventListener('click',e=>e.stopPropagation());
+  setTimeout(()=>document.addEventListener('click',()=>pop.remove(),{once:true}),100);
+}
+
+function renderRef(){
+  const q=(document.getElementById('ref-search')?.value||'').toLowerCase();
+  const grid=document.getElementById('ref-grid');
+  if(!grid)return;
+  const entries=Object.entries(REF).filter(([name,r])=>{
+    if(q&&!name.toLowerCase().includes(q)&&!(r.odor||'').toLowerCase().includes(q))return false;
+    if(refFilter==='ifra')return r.ifra!==null&&r.ifra>0;
+    if(refFilter==='banned')return r.ifra===0;
+    if(refFilter==='Top'||refFilter==='Mid'||refFilter==='Base')return r.volatility===refFilter;
+    return true;
+  });
+  if(!entries.length){grid.innerHTML='<div class="emp" style="grid-column:1/-1">No ingredients match your search.</div>';return;}
+  grid.innerHTML=entries.map(([name,r])=>{
+    const banned=r.ifra===0;
+    const restricted=r.ifra!==null&&r.ifra>0;
+    const cls=banned?'ref-card ifra-banned':restricted?'ref-card ifra-restricted':'ref-card';
+    const ifraBadge=banned
+      ?`<span class="ref-ifra-badge ref-ifra-banned">BANNED</span>`
+      :restricted?`<span class="ref-ifra-badge ref-ifra-limit">IFRA ≤${r.ifra}%</span>`:'';
+    const volColor={'Top':'var(--blue)','Mid':'var(--green)','Base':'var(--amber)'};
+    const usageStr=r.usage[0]===0&&r.usage[1]===0?'Do not use':`${r.usage[0]}–${r.usage[1]}%`;
+    const tenacityBar=r.tenacity>0?`<div style="display:flex;align-items:center;gap:6px;margin-top:2px">
+      <div style="flex:1;height:4px;background:var(--gray-100);border-radius:2px;overflow:hidden">
+        <div style="width:${r.tenacity*10}%;height:100%;background:${r.tenacity>=8?'var(--green)':r.tenacity>=5?'var(--blue)':'var(--amber)'};border-radius:2px"></div>
+      </div>
+      <span style="font-size:10px;color:var(--gray-400);white-space:nowrap">${r.tenacity}/10</span>
+    </div>`:'';
+    const tenacityLabel=r.tenacity>=9?'Exceptional':r.tenacity>=7?'Good':r.tenacity>=5?'Moderate':r.tenacity>=3?'Low':'Fleeting';
+    const inInventory=ings.some(i=>i.name.toLowerCase()===name.toLowerCase());
+    return`<div class="${cls}">
+      <div class="ref-name">${name}${ifraBadge}${inInventory?'<span style="font-size:10px;background:var(--blue-light);color:var(--blue);padding:1px 6px;border-radius:20px;margin-left:6px">In inventory</span>':''}</div>
+      <div class="ref-odor">${r.odor||''}</div>
+      <div class="ref-rows">
+        <div class="ref-row"><span>Volatility / Note</span><span style="color:${volColor[r.volatility]||'var(--gray-900)'};font-weight:500">${r.volatility||'—'}</span></div>
+        <div class="ref-row"><span>Typical usage</span><span>${usageStr}</span></div>
+        <div class="ref-row"><span>Tenacity (skin)</span><span>${tenacityLabel}</span></div>
+        ${r.bp?`<div class="ref-row"><span>Boiling point</span><span>${r.bp}°C</span></div>`:''}
+        ${r.threshold?`<div class="ref-row"><span>Odor threshold</span><span>${r.threshold} ppb</span></div>`:''}
+        ${restricted?`<div class="ref-row"><span>IFRA Cat.4 max</span><span style="color:#854F0B;font-weight:500">${r.ifra}%</span></div>`:''}
+      </div>
+      ${tenacityBar}
+      ${r.notes?`<div class="ref-notes">${r.notes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function switchTab(id){
+  const ids=['suppliers','inventory','formula','cost','invoice','versions','reference'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ids[i]===id));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+id));
+  if(id==='formula')populateFormulaSelector();
+  if(id==='cost'){populateCostFormulaSelector();rcc();}
+  if(id==='invoice')updInv();
+  if(id==='versions')renderVers();
+  if(id==='reference')renderRef();
+}
+
+function populateCostFormulaSelector(){
+  const sel=document.getElementById('cost-formula-sel');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— use current formula builder —</option>';
+  const seen=new Set();
+  vers.forEach(v=>{
+    if(!seen.has(v.formula_id)){
+      seen.add(v.formula_id);
+      const opt=document.createElement('option');
+      opt.value=v.formula_id;
+      opt.textContent=v.formulas.name;
+      sel.appendChild(opt);
+    }
+  });
+  if(cur)sel.value=cur;
+}
+
+function loadFormulaForCost(formulaId){
+  const meta=document.getElementById('cost-formula-meta');
+  if(!formulaId){
+    costFrowsOverride=null;
+    if(meta)meta.textContent='Using formula builder';
+    rcc();updInv();return;
+  }
+  const latest=vers.find(v=>v.formula_id===formulaId);
+  if(!latest){if(meta)meta.textContent='No saved versions found';return;}
+  if(meta)meta.textContent=`Latest: v${latest.version_number} · ${latest.formula_rows.length} ingredients · ${new Date(latest.saved_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'})}`;
+  const vol=latest.formulas.base_volume_ml||100;
+  costFrowsOverride={
+    rows:(latest.formula_rows||[]).map(r=>({name:r.ingredient_name,amount:r.amount_g,pct:vol>0?(r.amount_g/vol*100):0,costPerG:r.cost_per_g_snapshot})),
+    name:latest.formulas.name,
+    vol
+  };
+  rcc();
+  const pf=document.getElementById('ip');
+  if(pf)pf.value=latest.formulas.name+' (50ml)';
+  updIT();
+}
+
+init();
+</script>
+</body>
+</html>
