@@ -156,6 +156,10 @@ textarea.ni{resize:vertical;line-height:1.5}
 /* Logout button */
 .logout-btn{background:none;border:0.5px solid rgba(255,255,255,0.2);border-radius:var(--radius);padding:4px 10px;font-size:11px;color:rgba(255,255,255,0.6);cursor:pointer;font-family:inherit;transition:all 0.15s}
 .logout-btn:hover{background:rgba(255,255,255,0.1);color:white}
+/* Profile button */
+.prof-btn{background:rgba(255,255,255,0.1);border:0.5px solid rgba(255,255,255,0.2);border-radius:var(--radius);padding:4px 10px;font-size:11px;color:rgba(255,255,255,0.8);cursor:pointer;font-family:inherit;transition:all 0.15s;display:flex;align-items:center;gap:6px}
+.prof-btn:hover{background:rgba(255,255,255,0.2);color:white}
+.prof-avatar{width:20px;height:20px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--blue-dark);flex-shrink:0}
 .ref-filter-btn{font-family:inherit;font-size:12px;padding:4px 12px;border-radius:20px;border:0.5px solid var(--border);background:white;color:var(--gray-600);cursor:pointer;transition:all 0.15s}
 .ref-filter-btn:hover{border-color:var(--blue);color:var(--blue)}
 .ref-filter-btn.active{background:var(--blue);color:white;border-color:var(--blue)}
@@ -377,6 +381,10 @@ textarea.ni{resize:vertical;line-height:1.5}
   </div>
   <div style="display:flex;align-items:center;gap:8px">
     <span class="ws-badge" id="wsbadge">Loading...</span>
+    <button class="prof-btn" onclick="openProfileModal()" id="prof-btn" title="Edit profile">
+      <div class="prof-avatar" id="prof-avatar">?</div>
+      <span id="prof-name-short" style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Profile</span>
+    </button>
     <button class="logout-btn" onclick="doLogout()">Sign out</button>
   </div>
 </header>
@@ -694,6 +702,34 @@ textarea.ni{resize:vertical;line-height:1.5}
 </div>
 
 </main>
+
+<!-- PROFILE MODAL -->
+<div id="profilemod" class="lov">
+  <div class="lo" style="width:440px">
+    <div class="loh">Edit profile</div>
+    <div class="auth-err" id="profile-err" style="display:none"></div>
+    <div class="fld">
+      <label>Email</label>
+      <input class="ni" id="prof-email" style="width:100%;background:var(--gray-50);color:var(--gray-400)" readonly>
+    </div>
+    <div class="fld">
+      <label>Brand / Project name *</label>
+      <input class="ni" id="prof-brand" style="width:100%" placeholder="e.g. Aranya Fine Fragrance">
+    </div>
+    <div class="fld">
+      <label>Instagram</label>
+      <input class="ni" id="prof-ig" style="width:100%" placeholder="@yourbrand">
+    </div>
+    <div class="fld">
+      <label>WhatsApp</label>
+      <input class="ni" id="prof-wa" style="width:100%" placeholder="+62...">
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+      <button class="btn" onclick="closeProfileModal()">Cancel</button>
+      <button class="btn btn-primary" id="prof-save-btn" onclick="saveProfile()">Save changes</button>
+    </div>
+  </div>
+</div>
 
 <!-- SUPPLIER MODAL -->
 <div id="supmod" class="lov">
@@ -1062,10 +1098,49 @@ async function init(){
   }
 }
 
+function openProfileModal(){
+  const err=document.getElementById('profile-err');
+  err.style.display='none';err.textContent='';
+  document.getElementById('prof-email').value=currentUser?.email||'';
+  document.getElementById('prof-brand').value=document.getElementById('wsbadge').textContent||'';
+  document.getElementById('prof-ig').value=document.getElementById('ig')?.value||'';
+  document.getElementById('prof-wa').value=document.getElementById('wa')?.value||'';
+  document.getElementById('profilemod').style.display='flex';
+}
+function closeProfileModal(){
+  document.getElementById('profilemod').style.display='none';
+}
+async function saveProfile(){
+  const brand=document.getElementById('prof-brand').value.trim();
+  const err=document.getElementById('profile-err');
+  const btn=document.getElementById('prof-save-btn');
+  if(!brand){err.textContent='Brand name is required.';err.style.display='block';return;}
+  err.style.display='none';
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const ig=document.getElementById('prof-ig').value.trim();
+    const wa=document.getElementById('prof-wa').value.trim();
+    await dbUpdate('workspaces',{name:brand,instagram:ig||null,whatsapp:wa||null},['id=eq.'+WID]);
+    document.getElementById('wsbadge').textContent=brand;
+    const igEl=document.getElementById('ig');const waEl=document.getElementById('wa');
+    if(igEl)igEl.value=ig;
+    if(waEl)waEl.value=wa;
+    const initial=brand.charAt(0).toUpperCase();
+    document.getElementById('prof-avatar').textContent=initial;
+    document.getElementById('prof-name-short').textContent=brand.length>14?brand.slice(0,14)+'…':brand;
+    closeProfileModal();
+    toast('Profile updated','success');
+  }catch(e){err.textContent=e.message;err.style.display='block';}
+  finally{btn.disabled=false;btn.textContent='Save changes';}
+}
+
 async function loadWS(){
   const data=await dbGetOne('workspaces','*',['id=eq.'+WID]);
   if(data){
-    document.getElementById('wsbadge').textContent=data.name||'Workspace';
+    const name=data.name||'Workspace';
+    document.getElementById('wsbadge').textContent=name;
+    document.getElementById('prof-avatar').textContent=name.charAt(0).toUpperCase();
+    document.getElementById('prof-name-short').textContent=name.length>14?name.slice(0,14)+'…':name;
     if(data.tax_rate!=null)document.getElementById('ppn').value=data.tax_rate;
     if(data.instagram)document.getElementById('ig').value=data.instagram;
     if(data.bank_name)document.getElementById('bk').value=data.bank_name;
