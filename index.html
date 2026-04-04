@@ -766,6 +766,16 @@ function getH(){
   const token=currentSession?.access_token||SB_KEY;
   return{'apikey':SB_KEY,'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/json','Prefer':'return=representation'};
 }
+async function refreshToken(){
+  const saved=localStorage.getItem('ramu_session');
+  if(!saved){location.reload();throw new Error('Session expired');}
+  const s=JSON.parse(saved);
+  const r=await fetch(SB_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});
+  if(!r.ok){localStorage.removeItem('ramu_session');location.reload();throw new Error('Session expired, please sign in again');}
+  const d=await r.json();
+  currentSession=d;currentUser=d.user;
+  localStorage.setItem('ramu_session',JSON.stringify({access_token:d.access_token,refresh_token:d.refresh_token,user:d.user}));
+}
 
 // ── AUTH API ────────────────────────────────────────────────
 async function authPost(path,body){
@@ -884,26 +894,30 @@ function showForgot(){document.getElementById('auth-forgot').style.display='bloc
 async function dbGet(table,select,filters=[]){
   let url=SB_URL+'/rest/v1/'+table+'?select='+encodeURIComponent(select);
   filters.forEach(f=>url+='&'+f);
-  const r=await fetch(url,{method:'GET',mode:'cors',headers:getH()});
+  let r=await fetch(url,{method:'GET',mode:'cors',headers:getH()});
+  if(r.status===401){await refreshToken();r=await fetch(url,{method:'GET',mode:'cors',headers:getH()});}
   if(!r.ok){const t=await r.text();throw new Error(`${table} GET ${r.status}: ${t}`);}
   return r.json();
 }
 async function dbGetOne(table,select,filters=[]){const arr=await dbGet(table,select,filters);return arr&&arr.length?arr[0]:null;}
 async function dbInsert(table,body){
-  const r=await fetch(SB_URL+'/rest/v1/'+table,{method:'POST',mode:'cors',headers:getH(),body:JSON.stringify(body)});
+  let r=await fetch(SB_URL+'/rest/v1/'+table,{method:'POST',mode:'cors',headers:getH(),body:JSON.stringify(body)});
+  if(r.status===401){await refreshToken();r=await fetch(SB_URL+'/rest/v1/'+table,{method:'POST',mode:'cors',headers:getH(),body:JSON.stringify(body)});}
   if(!r.ok){const t=await r.text();throw new Error(`${table} INSERT ${r.status}: ${t}`);}
   const txt=await r.text();return txt?JSON.parse(txt):[];
 }
 async function dbUpdate(table,body,filters=[]){
   let url=SB_URL+'/rest/v1/'+table+'?';
   filters.forEach((f,i)=>url+=(i?'&':'')+f);
-  const r=await fetch(url,{method:'PATCH',mode:'cors',headers:getH(),body:JSON.stringify(body)});
+  let r=await fetch(url,{method:'PATCH',mode:'cors',headers:getH(),body:JSON.stringify(body)});
+  if(r.status===401){await refreshToken();r=await fetch(url,{method:'PATCH',mode:'cors',headers:getH(),body:JSON.stringify(body)});}
   if(!r.ok){const t=await r.text();throw new Error(`${table} PATCH ${r.status}: ${t}`);}
 }
 async function dbDelete(table,filters=[]){
   let url=SB_URL+'/rest/v1/'+table+'?';
   filters.forEach((f,i)=>url+=(i?'&':'')+f);
-  const r=await fetch(url,{method:'DELETE',mode:'cors',headers:{...getH(),'Prefer':''}});
+  let r=await fetch(url,{method:'DELETE',mode:'cors',headers:{...getH(),'Prefer':''}});
+  if(r.status===401){await refreshToken();r=await fetch(url,{method:'DELETE',mode:'cors',headers:{...getH(),'Prefer':''}});}
   if(!r.ok){const t=await r.text();throw new Error(`${table} DELETE ${r.status}: ${t}`);}
 }
 
@@ -1062,6 +1076,8 @@ function hideLov(){document.getElementById('lov').style.display='none';}
 
 // bootApp — called after successful auth + WID resolved
 async function bootApp(){
+  // Proactively refresh token every 50 minutes (Supabase tokens expire after 1 hour)
+  setInterval(async()=>{try{await refreshToken();}catch(e){}},50*60*1000);
   showLov('Loading your workspace...');
   try{
     await loadWS();
