@@ -1495,7 +1495,7 @@ function renderFRows(){
     const ifraWarn=ifraSt&&ifraSt.type!=='ok'?`<div style="font-size:11px;color:${ifraSt.type==='banned'?'var(--red)':ifraSt.type==='over'?'var(--red)':'var(--amber)'};margin-top:2px">⚠ ${ifraSt.msg}</div>`:'';
 
     const pctCell=fMode==='pct'
-      ?`<input class="ni" type="text" inputmode="decimal" id="pct-${idx}" value="${row.pct??''}" placeholder="0.00" style="width:72px;font-weight:500"
+      ?`<input class="ni" type="text" inputmode="decimal" id="pct-${idx}" value="${row.pct!=null&&row.pct!==''?+parseFloat(row.pct).toFixed(3):''}" placeholder="0.00" style="width:72px;font-weight:500"
           oninput="frows[${idx}].pct=this.value;updPctStatus();updFMetOnly()"
           onblur="frows[${idx}].pct=this.value;softRecalc()"
           onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].pct=this.value;const ni=${idx}+1;renderFRows();setTimeout(()=>{if(ni<frows.length){const nx=document.getElementById('ac-'+ni);if(nx){nx.focus();nx.select();}}else{addFRow();}},0);}">`
