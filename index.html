@@ -489,6 +489,7 @@ textarea.ni{resize:vertical;line-height:1.5}
     <span>Total: <strong id="pct-total" style="color:var(--gray-900)">0%</strong></span>
     <span id="pct-hint" style="font-size:12px"></span>
     <span id="g-total-display" style="font-size:12px;color:var(--gray-400)"></span>
+    <button id="group-role-btn" class="btn btn-sm" onclick="toggleGroupRole()" style="margin-left:auto;font-size:11px">Group by role</button>
   </div>
   <div id="falerts" style="margin-bottom:12px"></div>
   <div class="card">
@@ -1059,7 +1060,7 @@ function ifraStatus(name,pct){
   return{type:'ok',msg:`Within IFRA Cat.4 limit of ${r.ifra}%`};
 }
 
-let sups=[],ings=[],frows=[],vers=[],selMult=4,manPr=false,isort={col:'name',dir:1},costFrowsOverride=null,currentVersionId=null;
+let sups=[],ings=[],frows=[],vers=[],selMult=4,manPr=false,isort={col:'name',dir:1},costFrowsOverride=null,currentVersionId=null,groupByRole=false;
 
 const fmtRp=n=>'Rp '+Math.round(n).toLocaleString('id-ID');
 const fmtN=n=>Math.round(n).toLocaleString('id-ID');
@@ -1479,35 +1480,59 @@ function renderFRows(){
     updFMet();updFAlerts();return;
   }
   body.innerHTML='';
-  frows.forEach((row,idx)=>{
+  const roleColors={'Top':'#E0F2FA','Mid':'#EAF3DE','Base':'#F3EAD8','Bridge':'#EDE0F2','Musk':'#F2E0E8','Accord':'#F2F2E0'};
+  let renderItems=[];
+  if(groupByRole){
+    const roleOrder=['Top','Mid','Base','Bridge','Musk','Accord','—'];
+    const grps={};roleOrder.forEach(r=>grps[r]=[]);
+    frows.forEach((row,idx)=>{
+      const m=ings.find(i=>i.name.toLowerCase()===row.name.toLowerCase());
+      const r=m?.role&&m.role!=='—'?m.role:'—';
+      (grps[r]||grps['—']).push({row,idx});
+    });
+    roleOrder.forEach(role=>{
+      if(!grps[role].length)return;
+      renderItems.push({header:true,role,items:grps[role]});
+      grps[role].forEach(p=>renderItems.push(p));
+    });
+  }else{
+    frows.forEach((row,idx)=>renderItems.push({row,idx}));
+  }
+  renderItems.forEach(item=>{
+    if(item.header){
+      const gPct=item.items.reduce((s,{row})=>s+(fMode==='pct'?parseFloat(row.pct)||0:gToPct(parseFloat(row.amount)||0,tg)),0);
+      const htr=document.createElement('tr');
+      htr.innerHTML=`<td colspan="8" style="background:var(--gray-50);padding:6px 12px;border-top:1.5px solid var(--border)">
+        <span style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;padding:2px 8px;border-radius:20px;background:${roleColors[item.role]||'var(--gray-100)'};color:var(--gray-600)">${item.role==='—'?'Unassigned':item.role}</span>
+        <span style="font-size:11px;color:var(--gray-400);margin-left:8px">${gPct.toFixed(1)}% · ${item.items.length} ingredient${item.items.length>1?'s':''}</span>
+      </td>`;
+      body.appendChild(htr);return;
+    }
+    const{row,idx}=item;
     const gVal=fMode==='pct'?pctToG(row.pct):parseFloat(row.amount)||0;
     const c=parseFloat(row.costPerG)||0;
     const pct=fMode==='pct'?(parseFloat(row.pct)||0):gToPct(gVal,tg);
     const m=ings.find(i=>i.name.toLowerCase()===row.name.toLowerCase());
     const cbg=m?'style="background:#EAF3DE"':'';
     const sw=m&&(m.stock_g||0)<gVal?`<div style="font-size:11px;color:var(--amber);margin-top:2px">Only ${m.stock_g}g in stock</div>`:'';
-    const roleColors={'Top':'#E0F2FA','Mid':'#EAF3DE','Base':'#F3EAD8','Bridge':'#EDE0F2','Musk':'#F2E0E8','Accord':'#F2F2E0'};
     const role=m?.role&&m.role!=='—'?m.role:null;
     const roleBadge=role?`<span style="font-size:10px;padding:1px 6px;border-radius:20px;background:${roleColors[role]||'var(--gray-100)'};color:var(--gray-600);margin-left:4px">${role}</span>`:'';
     const refData=getRef(row.name);
     const refBtn=refData?`<span title="${refData.odor||''} | Typical: ${refData.usage[0]}-${refData.usage[1]}% | ${refData.volatility}" style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;border:1px solid var(--gray-200);font-size:9px;color:var(--gray-400);cursor:help;margin-left:4px;flex-shrink:0" onclick="showRefPopup('${esc(row.name)}')">i</span>`:'';
     const ifraSt=row.name?ifraStatus(row.name,pct):null;
     const ifraWarn=ifraSt&&ifraSt.type!=='ok'?`<div style="font-size:11px;color:${ifraSt.type==='banned'?'var(--red)':ifraSt.type==='over'?'var(--red)':'var(--amber)'};margin-top:2px">⚠ ${ifraSt.msg}</div>`:'';
-
     const pctCell=fMode==='pct'
       ?`<input class="ni" type="text" inputmode="decimal" id="pct-${idx}" value="${row.pct!=null&&row.pct!==''?+parseFloat(row.pct).toFixed(3):''}" placeholder="0.00" style="width:72px;font-weight:500"
           oninput="frows[${idx}].pct=this.value;updPctStatus();updFMetOnly()"
           onblur="frows[${idx}].pct=this.value;softRecalc()"
           onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].pct=this.value;const ni=${idx}+1;renderFRows();setTimeout(()=>{if(ni<frows.length){const nx=document.getElementById('ac-'+ni);if(nx){nx.focus();nx.select();}}else{addFRow();}},0);}">`
       :`<span style="font-size:13px;color:var(--gray-400)">${pct.toFixed(2)}%</span>`;
-
     const gCell=fMode==='g'
       ?`<input class="ni" type="text" inputmode="decimal" id="g-${idx}" value="${row.amount??''}" placeholder="0.000" style="width:72px;font-weight:500"
           oninput="frows[${idx}].amount=this.value;updFMetOnly();updGRowBar(${idx})"
           onblur="frows[${idx}].amount=this.value;softRecalc()"
           onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].amount=this.value;const ni=${idx}+1;renderFRows();setTimeout(()=>{if(ni<frows.length){const nx=document.getElementById('ac-'+ni);if(nx){nx.focus();nx.select();}}else{addFRow();}},0);}">`
       :`<span style="font-size:13px;color:var(--gray-400)">${gVal.toFixed(4).replace(/(\.\d*[1-9])0+$/,'$1').replace(/\.0+$/,'')}g</span>`;
-
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td><div class="ac-wrap">
@@ -1531,6 +1556,15 @@ function renderFRows(){
     body.appendChild(tr);
   });
   updFMet();updFAlerts();rcc();updInv();
+}
+
+function toggleGroupRole(){
+  groupByRole=!groupByRole;
+  const btn=document.getElementById('group-role-btn');
+  btn.style.background=groupByRole?'var(--blue)':'';
+  btn.style.color=groupByRole?'white':'';
+  btn.style.borderColor=groupByRole?'var(--blue)':'';
+  renderFRows();
 }
 
 function softRecalc(){
