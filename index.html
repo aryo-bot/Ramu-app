@@ -1476,7 +1476,7 @@ function renderFRows(){
   updPctStatus();
   if(!frows.length){
     body.innerHTML=`<tr><td colspan="7"><div class="emp">Add ingredients to build your formula.</div></td></tr>`;
-    updFMet();return;
+    updFMet();updFAlerts();return;
   }
   body.innerHTML='';
   frows.forEach((row,idx)=>{
@@ -1498,14 +1498,14 @@ function renderFRows(){
       ?`<input class="ni" type="text" inputmode="decimal" id="pct-${idx}" value="${row.pct??''}" placeholder="0.00" style="width:72px;font-weight:500"
           oninput="frows[${idx}].pct=this.value;updPctStatus();updFMetOnly()"
           onblur="frows[${idx}].pct=this.value;softRecalc()"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].pct=this.value;softRecalc();if(${idx}+1<frows.length){const nx=document.getElementById('ac-'+(${idx}+1));if(nx){nx.focus();nx.select();}}else{addFRow();}}">`
+          onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].pct=this.value;const ni=${idx}+1;renderFRows();setTimeout(()=>{if(ni<frows.length){const nx=document.getElementById('ac-'+ni);if(nx){nx.focus();nx.select();}}else{addFRow();}},0);}">`
       :`<span style="font-size:13px;color:var(--gray-400)">${pct.toFixed(2)}%</span>`;
 
     const gCell=fMode==='g'
       ?`<input class="ni" type="text" inputmode="decimal" id="g-${idx}" value="${row.amount??''}" placeholder="0.000" style="width:72px;font-weight:500"
           oninput="frows[${idx}].amount=this.value;updFMetOnly();updGRowBar(${idx})"
           onblur="frows[${idx}].amount=this.value;softRecalc()"
-          onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].amount=this.value;softRecalc();if(${idx}+1<frows.length){const nx=document.getElementById('ac-'+(${idx}+1));if(nx){nx.focus();nx.select();}}else{addFRow();}}">`
+          onkeydown="if(event.key==='Enter'){event.preventDefault();frows[${idx}].amount=this.value;const ni=${idx}+1;renderFRows();setTimeout(()=>{if(ni<frows.length){const nx=document.getElementById('ac-'+ni);if(nx){nx.focus();nx.select();}}else{addFRow();}},0);}">`
       :`<span style="font-size:13px;color:var(--gray-400)">${gVal.toFixed(4).replace(/(\.\d*[1-9])0+$/,'$1').replace(/\.0+$/,'')}g</span>`;
 
     const tr=document.createElement('tr');
