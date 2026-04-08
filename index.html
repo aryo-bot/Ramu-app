@@ -815,7 +815,7 @@ async function doSignup(){
   if(pass!==pass2){err.textContent='Passwords do not match.';err.classList.add('show');return;}
   btn.disabled=true;btn.textContent='Creating account...';
   try{
-    const d=await authPost('/auth/v1/signup',{email,password:pass});
+    const d=await authPost('/auth/v1/signup',{email,password:pass,redirect_to:location.origin});
     if(d.session){
       await handleSession(d.session,true);
     } else {
