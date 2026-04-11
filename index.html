@@ -2126,12 +2126,22 @@ function pdfTable(headers,rows){
   return`<table style="width:100%;border-collapse:collapse"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
 }
 function runPdfExport(htmlContent,filename){
-  const el=document.createElement('div');
-  el.style.cssText='position:fixed;top:0;left:0;width:794px;background:white;padding:40px;opacity:0;pointer-events:none;z-index:9999';
-  el.innerHTML=htmlContent;
-  document.body.appendChild(el);
-  html2pdf().set({margin:0,filename,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,logging:false,windowWidth:794},jsPDF:{unit:'px',format:'a4',orientation:'portrait'}})
-    .from(el).save().then(()=>document.body.removeChild(el));
+  const brand=document.getElementById('wsbadge').textContent||'Ramu';
+  const w=window.open('','_blank');
+  if(!w){toast('Allow pop-ups to export PDF','error');return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${filename}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:#1C1C1A;padding:40px;background:white}
+table{width:100%;border-collapse:collapse;margin-top:4px}
+th{text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#888;border-bottom:1.5px solid #1A6B8A;white-space:nowrap}
+td{padding:7px 10px;font-size:12px;vertical-align:top;border-bottom:0.5px solid #efefef}
+tr:nth-child(even) td{background:#f8f8f7}
+@media print{@page{margin:20mm}body{padding:0}}
+</style></head><body>${htmlContent}
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`);
+  w.document.close();
 }
 function exportSuppliersPDF(){
   if(!sups.length){toast('No suppliers to export','error');return;}
