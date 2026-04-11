@@ -412,7 +412,10 @@ textarea.ni{resize:vertical;line-height:1.5}
   <div class="card">
     <div class="card-hdr">
       <span class="card-title">Supplier directory</span>
-      <button class="btn btn-primary btn-sm" onclick="openSupMod()">+ Add supplier</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm" onclick="exportSuppliersPDF()">↓ Export PDF</button>
+        <button class="btn btn-primary btn-sm" onclick="openSupMod()">+ Add supplier</button>
+      </div>
     </div>
     <div id="sgrid" style="padding:16px"><div class="emp">Loading...</div></div>
   </div>
@@ -432,6 +435,7 @@ textarea.ni{resize:vertical;line-height:1.5}
       <span class="card-title">Master ingredient list</span>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="text" class="ni" id="isearch" placeholder="Search..." style="width:160px" oninput="renderIngs()">
+        <button class="btn btn-sm" onclick="exportIngredientsPDF()">↓ Export PDF</button>
         <button class="btn btn-primary btn-sm" onclick="addIngRow()">+ Add ingredient</button>
       </div>
     </div>
@@ -2099,6 +2103,48 @@ function loadFormulaForCost(formulaId){
   const pf=document.getElementById('ip');
   if(pf)pf.value=latest.formulas.name+' (50ml)';
   updIT();
+}
+
+function pdfHeader(title){
+  const brand=document.getElementById('wsbadge').textContent||'Ramu';
+  const date=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  return`<div style="font-family:'DM Sans',sans-serif;padding:0 0 12px;border-bottom:2px solid #1A6B8A;margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-end">
+    <div>
+      <div style="font-size:20px;font-weight:600;color:#1A6B8A;letter-spacing:0.05em">${esc(brand)}</div>
+      <div style="font-size:13px;color:#888;margin-top:2px">${title}</div>
+    </div>
+    <div style="font-size:11px;color:#aaa">${date}</div>
+  </div>`;
+}
+function pdfTable(headers,rows){
+  const ths=headers.map(h=>`<th style="text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#888;border-bottom:1px solid #e0e0e0;white-space:nowrap">${h}</th>`).join('');
+  const trs=rows.map((cells,i)=>{
+    const bg=i%2===0?'#ffffff':'#f8f8f7';
+    const tds=cells.map(c=>`<td style="padding:7px 10px;font-size:12px;color:#1C1C1A;border-bottom:0.5px solid #efefef;vertical-align:top">${c||'—'}</td>`).join('');
+    return`<tr style="background:${bg}">${tds}</tr>`;
+  }).join('');
+  return`<table style="width:100%;border-collapse:collapse"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table>`;
+}
+function runPdfExport(htmlContent,filename){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:white;padding:40px';
+  el.innerHTML=htmlContent;
+  document.body.appendChild(el);
+  html2pdf().set({margin:0,filename,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'px',format:'a4',orientation:'portrait'}})
+    .from(el).save().then(()=>document.body.removeChild(el));
+}
+function exportSuppliersPDF(){
+  if(!sups.length){toast('No suppliers to export','error');return;}
+  const rows=sups.map(s=>[esc(s.name),esc(s.contact_person||''),esc(s.phone||''),esc(s.email||''),esc([s.city,s.country].filter(Boolean).join(', ')||''),esc(s.notes||'')]);
+  const html=pdfHeader('Supplier Directory')+pdfTable(['Supplier','Contact','Phone','Email','Location','Notes'],rows);
+  runPdfExport(html,'suppliers.pdf');
+}
+function exportIngredientsPDF(){
+  if(!ings.length){toast('No ingredients to export','error');return;}
+  const sorted=[...ings].sort((a,b)=>a.name.localeCompare(b.name));
+  const rows=sorted.map(i=>[esc(i.name),esc(i.category||''),esc(i.role&&i.role!=='—'?i.role:'')]);
+  const html=pdfHeader('Ingredient List')+pdfTable(['Ingredient','Category','Role'],rows);
+  runPdfExport(html,'ingredients.pdf');
 }
 
 init();
