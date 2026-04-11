@@ -2127,10 +2127,10 @@ function pdfTable(headers,rows){
 }
 function runPdfExport(htmlContent,filename){
   const el=document.createElement('div');
-  el.style.cssText='position:fixed;left:-9999px;top:0;width:794px;background:white;padding:40px';
+  el.style.cssText='position:fixed;top:0;left:0;width:794px;background:white;padding:40px;opacity:0;pointer-events:none;z-index:9999';
   el.innerHTML=htmlContent;
   document.body.appendChild(el);
-  html2pdf().set({margin:0,filename,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'px',format:'a4',orientation:'portrait'}})
+  html2pdf().set({margin:0,filename,image:{type:'jpeg',quality:0.98},html2canvas:{scale:2,useCORS:true,logging:false,windowWidth:794},jsPDF:{unit:'px',format:'a4',orientation:'portrait'}})
     .from(el).save().then(()=>document.body.removeChild(el));
 }
 function exportSuppliersPDF(){
