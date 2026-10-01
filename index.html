@@ -2152,8 +2152,8 @@ function exportSuppliersPDF(){
 function exportIngredientsPDF(){
   if(!ings.length){toast('No ingredients to export','error');return;}
   const sorted=[...ings].sort((a,b)=>a.name.localeCompare(b.name));
-  const rows=sorted.map(i=>[esc(i.name),esc(i.category||''),esc(i.role&&i.role!=='—'?i.role:'')]);
-  const html=pdfHeader('Ingredient List')+pdfTable(['Ingredient','Category','Role'],rows);
+  const rows=sorted.map(i=>[esc(i.name),esc(i.category||''),esc(i.role&&i.role!=='—'?i.role:''),i.cost_per_g?'Rp '+Number(i.cost_per_g).toLocaleString('id-ID'):'—']);
+  const html=pdfHeader('Ingredient List')+pdfTable(['Ingredient','Category','Role','Cost/g (Rp)'],rows);
   runPdfExport(html,'ingredients.pdf');
 }
 
